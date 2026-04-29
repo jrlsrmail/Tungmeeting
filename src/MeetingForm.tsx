@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { format, addMonths, addWeeks, setHours, setMinutes, startOfWeek, addDays, getDay } from 'date-fns';
-import { Plus, X, Calendar as CalendarIcon, Clock, Trash2, Save } from 'lucide-react';
+import { format, addMonths, addWeeks, addDays, getDay, startOfMonth } from 'date-fns';
+import { Plus, X, Calendar as CalendarIcon, Clock, Trash2, Save, MapPin, User, Users, Info, Type } from 'lucide-react';
 import { Department, DEPARTMENT_CONTENTS, Frequency, Meeting } from './types';
 import { cn } from './lib/utils';
 
@@ -23,6 +23,12 @@ const DAYS_OF_WEEK = [
   { label: '週日', value: 0 },
 ];
 
+const ADVISORS_LIST = [
+  "陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"
+];
+
+const LOCATIONS = ["口醫部會議室", "其他"];
+
 export default function MeetingForm({ 
   onAddMeetings, 
   onUpdateMeeting, 
@@ -36,10 +42,22 @@ export default function MeetingForm({
   const [customContent, setCustomContent] = useState('');
   const [frequency, setFrequency] = useState<Frequency>(Frequency.SPECIFIC);
   const [selectedDay, setSelectedDay] = useState<number>(3); // Default Wednesday
+  const [nthWeek, setNthWeek] = useState<number>(1); // 1st, 2nd, etc.
+  
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // New Fields
+  const [topic, setTopic] = useState('');
+  const [location, setLocation] = useState('口醫部會議室');
+  const [customLocation, setCustomLocation] = useState('');
+  const [advisors, setAdvisors] = useState<string[]>([]);
+  const [customAdvisor, setCustomAdvisor] = useState('');
+  const [presenter, setPresenter] = useState('');
+  const [recorder, setRecorder] = useState('');
+  const [remarks, setRemarks] = useState('');
 
   const parseTime = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
@@ -97,109 +115,155 @@ export default function MeetingForm({
         setContent('其他');
         setCustomContent(editingMeeting.content);
       }
-      setFrequency(Frequency.SPECIFIC);
       setStartDate(format(new Date(editingMeeting.date), 'yyyy-MM-dd'));
       setStartTime(editingMeeting.startTime);
       setEndTime(editingMeeting.endTime);
+      
+      // Load New Fields
+      setTopic(editingMeeting.topic || '');
+      if (LOCATIONS.includes(editingMeeting.location || '')) {
+        setLocation(editingMeeting.location || '口醫部會議室');
+        setCustomLocation('');
+      } else {
+        setLocation('其他');
+        setCustomLocation(editingMeeting.location || '');
+      }
+      setAdvisors(editingMeeting.advisors?.map(a => a.replace('醫師', '')) || []);
+      setPresenter(editingMeeting.presenter?.replace('醫師', '') || '');
+      setRecorder(editingMeeting.recorder?.replace('醫師', '') || '');
+      setRemarks(editingMeeting.remarks || '');
+
+      setFrequency(Frequency.SPECIFIC);
     } else {
-      // Default reset
       setDepartment(Department.ADMIN);
       setContent(DEPARTMENT_CONTENTS[Department.ADMIN][0]);
       setCustomContent('');
+      setTopic('');
+      setLocation('口醫部會議室');
+      setCustomLocation('');
+      setAdvisors([]);
+      setPresenter('');
+      setRecorder('');
+      setRemarks('');
       setFrequency(Frequency.SPECIFIC);
     }
   }, [editingMeeting]);
 
-  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const dept = e.target.value as Department;
-    setDepartment(dept);
-    const contents = DEPARTMENT_CONTENTS[dept];
-    if (contents.length > 0) {
-      setContent(contents[0]);
-    } else {
-      setContent('其他');
-    }
+  const toggleAdvisor = (name: string) => {
+    setAdvisors(prev => 
+      prev.includes(name) ? prev.filter(a => a !== name) : [...prev, name]
+    );
   };
 
   const generateMeetings = () => {
     const finalContent = content === '其他' || department === Department.OTHER ? customContent : content;
-    if (!finalContent) return;
+    if (!finalContent) {
+      alert('請填寫會議內容');
+      return;
+    }
+
+    const finalLocation = location === '其他' ? customLocation : location;
+    const finalAdvisors = advisors.map(a => a.endsWith('醫師') ? a : `${a}醫師`);
+    if (customAdvisor) {
+      finalAdvisors.push(customAdvisor.endsWith('醫師') ? customAdvisor : `${customAdvisor}醫師`);
+    }
+    const finalPresenter = presenter ? (presenter.endsWith('醫師') ? presenter : `${presenter}醫師`) : '';
+    const finalRecorder = recorder ? (recorder.endsWith('醫師') ? recorder : `${recorder}醫師`) : '';
+
+    const firstDate = new Date(startDate);
+    const groupId = Math.random().toString(36).substring(7);
 
     if (editingMeeting) {
       onUpdateMeeting({
         ...editingMeeting,
         department,
         content: finalContent,
-        date: new Date(startDate),
+        date: firstDate,
         startTime,
         endTime,
+        topic,
+        location: finalLocation,
+        advisors: finalAdvisors,
+        presenter: finalPresenter,
+        recorder: finalRecorder,
+        remarks: remarks
       });
       onCancelEdit();
       return;
     }
 
-    const firstDate = new Date(startDate);
     const meetings: Meeting[] = [];
-    const groupId = crypto.randomUUID();
-
+    
     if (frequency === Frequency.SPECIFIC) {
-      meetings.push({
-        id: crypto.randomUUID(),
-        department,
-        content: finalContent,
-        date: firstDate,
-        startTime,
-        endTime,
-        isAutoGenerated: false,
-      });
+      meetings.push(createMeeting(firstDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
     } else {
       let count = 0;
       let currentDate = firstDate;
 
-      // If any recurring frequency, find the first occurrence of the selected day on or after startDate
-      if (frequency !== Frequency.SPECIFIC) {
+      // Logic to REALIGN currentDate to the selected frequency settings
+      if (frequency === Frequency.MONTHLY_NTH_DAY) {
+        let monthStart = startOfMonth(currentDate);
+        let firstOccur = monthStart;
+        while (getDay(firstOccur) !== selectedDay) {
+          firstOccur = addDays(firstOccur, 1);
+        }
+        currentDate = addWeeks(firstOccur, nthWeek - 1);
+        if (currentDate < firstDate) {
+          let nextMonth = addMonths(monthStart, 1);
+          let firstOccurNext = nextMonth;
+          while (getDay(firstOccurNext) !== selectedDay) {
+            firstOccurNext = addDays(firstOccurNext, 1);
+          }
+          currentDate = addWeeks(firstOccurNext, nthWeek - 1);
+        }
+      } else if (frequency !== Frequency.SPECIFIC) {
         let diff = selectedDay - getDay(currentDate);
         if (diff < 0) diff += 7;
         currentDate = addDays(currentDate, diff);
       }
 
-      // Generate for the next 12 months (or more for Yearly)
-      const monthsToGenerate = frequency === Frequency.EVERY_YEAR ? 36 : 12; // 3 years for yearly
+      const monthsToGenerate = frequency === Frequency.EVERY_YEAR ? 36 : 12;
       const endGenDate = addMonths(firstDate, monthsToGenerate);
 
       while (currentDate < endGenDate) {
         if (frequency === Frequency.ONCE_A_MONTH) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addMonths(currentDate, 1);
-          // After moving monthly, we need to realign to the selected day of week
-          // In this simple mode, we just find the nearest selectedDay in that new month
           let diff = selectedDay - getDay(currentDate);
           if (diff < 0) diff += 7;
           currentDate = addDays(currentDate, diff);
+        } else if (frequency === Frequency.MONTHLY_NTH_DAY) {
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
+          let monthStart = startOfMonth(addMonths(currentDate, 1));
+          let firstOccurNext = monthStart;
+          while (getDay(firstOccurNext) !== selectedDay) {
+            firstOccurNext = addDays(firstOccurNext, 1);
+          }
+          currentDate = addWeeks(firstOccurNext, nthWeek - 1);
         } else if (frequency === Frequency.TWICE_A_MONTH) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
-          meetings.push(createMeeting(addWeeks(currentDate, 2), finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
+          meetings.push(createMeeting(addWeeks(currentDate, 2), finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addMonths(currentDate, 1);
           let diff = selectedDay - getDay(currentDate);
           if (diff < 0) diff += 7;
           currentDate = addDays(currentDate, diff);
         } else if (frequency === Frequency.ONCE_EVERY_TWO_MONTHS) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addMonths(currentDate, 2);
           let diff = selectedDay - getDay(currentDate);
           if (diff < 0) diff += 7;
           currentDate = addDays(currentDate, diff);
         } else if (frequency === Frequency.ONCE_A_QUARTER) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addMonths(currentDate, 3);
           let diff = selectedDay - getDay(currentDate);
           if (diff < 0) diff += 7;
           currentDate = addDays(currentDate, diff);
         } else if (frequency === Frequency.WEEKLY) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addWeeks(currentDate, 1);
         } else if (frequency === Frequency.EVERY_YEAR) {
-          meetings.push(createMeeting(currentDate, finalContent, groupId));
+          meetings.push(createMeeting(currentDate, finalContent, groupId, finalLocation, finalAdvisors, finalPresenter, finalRecorder));
           currentDate = addMonths(currentDate, 12);
           let diff = selectedDay - getDay(currentDate);
           if (diff < 0) diff += 7;
@@ -214,16 +278,30 @@ export default function MeetingForm({
     onAddMeetings(meetings);
   };
 
-  const createMeeting = (date: Date, meetingContent: string, groupId: string): Meeting => {
+  const createMeeting = (
+    date: Date, 
+    meetingContent: string, 
+    groupId: string, 
+    loc: string, 
+    advs: string[], 
+    pres: string, 
+    rec: string
+  ): Meeting => {
     return {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(7),
       department,
       content: meetingContent,
       date: new Date(date),
       startTime,
       endTime,
       isAutoGenerated: true,
-      groupId
+      groupId,
+      topic,
+      location: loc,
+      advisors: advs,
+      presenter: pres,
+      recorder: rec,
+      remarks: remarks
     };
   };
 
@@ -237,7 +315,7 @@ export default function MeetingForm({
         </h3>
         {editingMeeting && (
           <button onClick={onCancelEdit} className="text-slate-400 hover:text-slate-600">
-            <X size={20} />
+            <X size={16} />
           </button>
         )}
       </div>
@@ -245,11 +323,20 @@ export default function MeetingForm({
       <div className="space-y-4">
         {/* Department Selection */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600">主責科別</label>
-          <select
+          <label className="text-xs font-semibold text-slate-600">科別</label>
+          <select 
             value={department}
-            onChange={handleDepartmentChange}
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/20 transition-all"
+            onChange={(e) => {
+              const dept = e.target.value as Department;
+              setDepartment(dept);
+              const contents = DEPARTMENT_CONTENTS[dept];
+              if (contents && contents.length > 0) {
+                setContent(contents[0]);
+              } else {
+                setContent('其他');
+              }
+            }}
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all appearance-none"
           >
             {Object.values(Department).map(dept => (
               <option key={dept} value={dept}>{dept}</option>
@@ -258,12 +345,12 @@ export default function MeetingForm({
         </div>
 
         {/* Content Selection */}
-        {department !== Department.OTHER && (
+        {department !== Department.OTHER && DEPARTMENT_CONTENTS[department] && (
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600">會議內容</label>
             <div className="grid grid-cols-2 gap-2">
               {DEPARTMENT_CONTENTS[department].map(c => (
-                <div 
+                <div
                   key={c}
                   onClick={() => setContent(c)}
                   className={cn(
@@ -283,7 +370,7 @@ export default function MeetingForm({
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600">自行輸入</label>
+            <label className="text-xs font-semibold text-slate-600 font-bold text-sky-600">自行輸入</label>
             <input
               type="text"
               value={customContent}
@@ -294,26 +381,138 @@ export default function MeetingForm({
           </div>
         )}
 
-        <hr className="border-slate-100 my-6" />
+        {/* Topic Input */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            <Type size={12} /> 課程主題 (選填)
+          </label>
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="請輸入課程主題..."
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all"
+          />
+        </div>
 
-        <h2 className="text-sm uppercase tracking-wider text-slate-400 font-bold">2. 時間與頻率設定</h2>
+        {/* Location Selection */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            <MapPin size={12} /> 地點 (選填)
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-bold text-slate-700"
+            >
+              {LOCATIONS.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+            {location === '其他' && (
+              <input
+                type="text"
+                value={customLocation}
+                onChange={(e) => setCustomLocation(e.target.value)}
+                placeholder="請輸入地點..."
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-bold text-slate-700"
+              />
+            )}
+          </div>
+        </div>
 
-        {/* Frequency & Time */}
-        {!editingMeeting && (
-          <div className="p-3 border-2 border-sky-100 bg-sky-50/30 rounded-xl space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-sky-700">頻率模式</span>
-            </div>
+        {/* Advisors Selection */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1 text-sky-700">
+            <Users size={12} /> 指導醫師 (選填, 可複選)
+          </label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {ADVISORS_LIST.map(name => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => toggleAdvisor(name)}
+                className={cn(
+                  "p-1.5 text-[10px] border rounded-lg transition-all",
+                  advisors.includes(name)
+                    ? "bg-sky-500 text-white border-sky-500 font-bold"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-sky-200"
+                )}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          <div className="pt-1">
+            <input
+              type="text"
+              value={customAdvisor}
+              onChange={(e) => setCustomAdvisor(e.target.value)}
+              placeholder="其他指導醫師 (姓名將自動加上醫師)..."
+              className="w-full p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] outline-none focus:border-sky-500"
+            />
+          </div>
+        </div>
+
+        {/* Presenter & Recorder */}
+        <div className="flex gap-4">
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+              <User size={12} /> 報告者 (選填)
+            </label>
+            <input
+              type="text"
+              value={presenter}
+              onChange={(e) => setPresenter(e.target.value)}
+              placeholder="姓名 (自動加醫師)"
+              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+            />
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+              <User size={12} /> 紀錄者 (選填)
+            </label>
+            <input
+              type="text"
+              value={recorder}
+              onChange={(e) => setRecorder(e.target.value)}
+              placeholder="姓名 (自動加醫師)"
+              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Remarks */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            <Info size={12} /> 備註 (選填)
+          </label>
+          <textarea
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="請輸入備註內容..."
+            rows={2}
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all resize-none"
+          />
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-slate-100">
+          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">2. 時間與頻率範圍</h3>
+          
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-slate-600">頻率模式</label>
             <div className="grid grid-cols-2 gap-2">
-              {Object.values(Frequency).map(f => (
-                <button 
+              {Object.values(Frequency).map((f) => (
+                <button
                   key={f}
+                  type="button"
                   onClick={() => setFrequency(f)}
                   className={cn(
-                    "py-2 px-1 text-[10px] rounded border transition-all",
-                    frequency === f
-                      ? "bg-sky-500 text-white border-sky-500 shadow-md shadow-sky-200"
-                      : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                    "p-2 text-[10px] border rounded-xl transition-all font-medium",
+                    frequency === f 
+                      ? "bg-sky-500 border-sky-600 text-white font-bold shadow-md" 
+                      : "border-slate-100 hover:bg-slate-50 text-slate-500"
                   )}
                 >
                   {f}
@@ -321,44 +520,58 @@ export default function MeetingForm({
               ))}
             </div>
 
-            {/* Day of Week Selection for Recurring */}
+            {/* Recurring Options */}
             {frequency !== Frequency.SPECIFIC && (
-              <div className="pt-2 animate-in fade-in slide-in-from-top-1">
-                <label className="text-[10px] font-bold text-sky-700 block mb-1.5 flex items-center gap-1">
-                  固定於每週的這一天
-                </label>
-                <div className="flex flex-wrap gap-1">
-                  {DAYS_OF_WEEK.map(day => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => setSelectedDay(day.value)}
-                      className={cn(
-                        "flex-1 min-w-[40px] py-1.5 text-[10px] rounded-lg border transition-all",
-                        selectedDay === day.value
-                          ? "bg-sky-500 text-white border-sky-500 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-500 hover:border-sky-200"
-                      )}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+              <div className="pt-2 animate-in fade-in slide-in-from-top-1 space-y-3 p-3 bg-sky-50/50 rounded-xl border border-sky-100">
+                <div className="flex gap-4">
+                  {frequency === Frequency.MONTHLY_NTH_DAY && (
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-sky-700 block">第幾個週幾</label>
+                      <select 
+                        value={nthWeek}
+                        onChange={(e) => setNthWeek(Number(e.target.value))}
+                        className="w-full p-1.5 bg-white border border-sky-100 rounded-lg text-[10px] text-sky-600 font-bold"
+                      >
+                        {[1, 2, 3, 4, 5].map(v => (
+                          <option key={v} value={v}>第 {v} 個</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-1.5">
+                    <label className="text-[10px] font-bold text-sky-700 block uppercase tracking-wider">星期幾</label>
+                    <div className="flex flex-wrap gap-1">
+                      {DAYS_OF_WEEK.map(day => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => setSelectedDay(day.value)}
+                          className={cn(
+                            "flex-1 min-w-[28px] py-1 text-[10px] rounded-lg border transition-all",
+                            selectedDay === day.value
+                              ? "bg-sky-500 text-white border-sky-500 shadow-sm font-bold"
+                              : "bg-white border-slate-200 text-slate-500 hover:border-sky-200"
+                          )}
+                        >
+                          {day.label.replace('週', '')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
-        )}
 
-        <div className="grid grid-cols-1 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <CalendarIcon size={12} /> {frequency === Frequency.SPECIFIC ? '日期' : '開始月份/日期'}
+              <CalendarIcon size={12} /> {frequency === Frequency.SPECIFIC ? '會議日期' : '下一場會議日期'}
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-mono"
             />
           </div>
           <div className="flex gap-4">

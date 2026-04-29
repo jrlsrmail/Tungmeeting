@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format, isAfter, startOfToday } from 'date-fns';
-import { Trash2, Edit2, Clock, X } from 'lucide-react';
-import { Meeting } from './types';
+import { Trash2, Edit2, Clock, X, MapPin, User, Users, Info, Type, Hospital } from 'lucide-react';
+import { Meeting, Department } from './types';
 import { cn } from './lib/utils';
 
 interface RecentMeetingsListProps {
@@ -22,26 +22,34 @@ export default function RecentMeetingsList({
   const upcomingMeetings = meetings
     .filter(m => isAfter(new Date(m.date), today) || format(new Date(m.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5);
+    .slice(0, 10);
 
   return (
-    <div className="dashboard-card bg-white border border-slate-100 flex flex-col h-full">
-      <div className="accent-line !bg-slate-300"></div>
-      <h2 className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-4">近期會議清單</h2>
-      
-      <div className="space-y-3 flex-1 overflow-y-auto pr-1 scrollbar-hide">
+    <div className="dashboard-card overflow-hidden">
+      <div className="accent-line !bg-medical-accent"></div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
+            <Clock size={16} className="text-medical-accent" /> 近期排定會議
+          </h3>
+          <p className="text-[10px] text-slate-400 font-medium">UPCOMING MEETINGS</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
         {upcomingMeetings.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-sm italic">
-            目前暫無近期會議
+          <div className="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+            <CalendarIcon className="mx-auto text-slate-200 mb-2" size={32} />
+            <p className="text-xs text-slate-400 font-medium">目前尚無排定會議</p>
           </div>
         ) : (
           upcomingMeetings.map((meeting) => (
-            <div 
+            <div
               key={meeting.id}
-              className="p-3 bg-slate-50/50 border border-slate-100 rounded-2xl flex justify-between items-center group transition-all hover:bg-sky-50/50 hover:border-sky-100"
+              className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col gap-3 group transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200"
             >
               {deletingId === meeting.id ? (
-                <div className="flex-1 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-rose-600">確定刪除此項？</span>
                     <button onClick={() => setDeletingId(null)} className="text-slate-400 hover:text-slate-600">
@@ -54,7 +62,7 @@ export default function RecentMeetingsList({
                         onDelete(meeting.id);
                         setDeletingId(null);
                       }}
-                      className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[9px] font-bold rounded-lg transition-colors"
+                      className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[9px] font-bold rounded-lg transition-colors border border-rose-200"
                     >
                       僅刪除此場
                     </button>
@@ -73,32 +81,75 @@ export default function RecentMeetingsList({
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <span className="text-[10px] text-medical-primary font-bold font-mono flex items-center gap-1">
-                      <Clock size={10} />
-                      {format(new Date(meeting.date), 'yyyy.MM.dd')} {meeting.startTime}
-                    </span>
-                    <span className="text-xs font-bold text-slate-700 truncate">
-                      {meeting.department}
-                    </span>
-                    <span className="text-[10px] text-slate-500 truncate">
-                      {meeting.content}
-                    </span>
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-sky-500 text-white text-[9px] font-bold rounded-full uppercase">
+                          {format(new Date(meeting.date), 'yyyy.MM.dd')}
+                        </span>
+                        <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-bold rounded-full">
+                          {meeting.startTime} - {meeting.endTime}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-black text-slate-800 flex items-center gap-1.5 mt-1">
+                        <span className="text-medical-primary">[{meeting.department}]</span>
+                        {meeting.content}
+                      </h4>
+                    </div>
+                    
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => onEdit(meeting)}
+                        className="p-1.5 bg-white border border-slate-200 hover:bg-sky-100 hover:border-sky-200 text-slate-400 hover:text-medical-primary rounded-lg transition-all"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button 
+                        onClick={() => setDeletingId(meeting.id)}
+                        className="p-1.5 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => onEdit(meeting)}
-                      className="p-2 bg-white border border-slate-200 hover:bg-sky-100 hover:border-sky-200 text-slate-400 hover:text-medical-primary rounded-xl transition-all"
-                    >
-                      <Edit2 size={12} />
-                    </button>
-                    <button 
-                      onClick={() => setDeletingId(meeting.id)}
-                      className="p-2 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl transition-all"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 border-t border-slate-100 pt-3 text-[10px]">
+                    {meeting.topic && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <Type size={12} className="text-slate-400" />
+                        <span className="font-bold text-slate-700 truncate">主題：{meeting.topic}</span>
+                      </div>
+                    )}
+                    {meeting.location && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <MapPin size={12} className="text-slate-400" />
+                        <span className="truncate">地點：{meeting.location}</span>
+                      </div>
+                    )}
+                    {meeting.advisors && meeting.advisors.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <Users size={12} className="text-slate-400" />
+                        <span className="truncate">指導：{meeting.advisors.join(', ')}</span>
+                      </div>
+                    )}
+                    {meeting.presenter && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <User size={12} className="text-slate-400" />
+                        <span className="truncate">報告：{meeting.presenter}</span>
+                      </div>
+                    )}
+                    {meeting.recorder && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <User size={12} className="text-slate-400" />
+                        <span className="truncate">紀錄：{meeting.recorder}</span>
+                      </div>
+                    )}
+                    {meeting.remarks && (
+                      <div className="col-span-full flex items-start gap-1.5 text-slate-500 mt-1 italic">
+                        <Info size={12} className="text-slate-400 mt-0.5 shrink-0" />
+                        <span>備註：{meeting.remarks}</span>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -106,13 +157,11 @@ export default function RecentMeetingsList({
           ))
         )}
       </div>
-
-      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-        <span className="text-[10px] text-slate-400 font-medium">共 {meetings.length} 場會議</span>
-        <div className="w-8 h-8 rounded-lg bg-medical-primary flex items-center justify-center shadow-lg shadow-sky-100 text-white cursor-pointer hover:bg-medical-secondary transition-all">
-          <span className="text-xl leading-none">+</span>
-        </div>
-      </div>
     </div>
   );
+}
+
+// Helper to keep icons imported
+function CalendarIcon({ className, size }: { className?: string, size?: number }) {
+  return <Hospital className={className} size={size} />;
 }
