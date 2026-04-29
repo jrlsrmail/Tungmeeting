@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, addWeeks, addDays, getDay, startOfMonth } from 'date-fns';
 import { Plus, X, Calendar as CalendarIcon, Clock, Trash2, Save, MapPin, User, Users, Info, Type } from 'lucide-react';
-import { Department, DEPARTMENT_CONTENTS, Frequency, Meeting } from './types';
+import { Department, DEPARTMENT_CONTENTS, Frequency, Meeting, AppSettings } from './types';
 import { cn } from './lib/utils';
 
 interface MeetingFormProps {
@@ -11,6 +11,7 @@ interface MeetingFormProps {
   onDeleteSeries: (groupId: string) => void;
   editingMeeting: Meeting | null;
   onCancelEdit: () => void;
+  settings: AppSettings;
 }
 
 const DAYS_OF_WEEK = [
@@ -23,19 +24,14 @@ const DAYS_OF_WEEK = [
   { label: '週日', value: 0 },
 ];
 
-const ADVISORS_LIST = [
-  "陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"
-];
-
-const LOCATIONS = ["口醫部會議室", "其他"];
-
 export default function MeetingForm({ 
   onAddMeetings, 
   onUpdateMeeting, 
   onDeleteMeeting,
   onDeleteSeries,
   editingMeeting, 
-  onCancelEdit 
+  onCancelEdit,
+  settings
 }: MeetingFormProps) {
   const [department, setDepartment] = useState<Department>(Department.ADMIN);
   const [content, setContent] = useState('');
@@ -51,12 +47,14 @@ export default function MeetingForm({
 
   // New Fields
   const [topic, setTopic] = useState('');
-  const [location, setLocation] = useState('口醫部會議室');
+  const [location, setLocation] = useState((settings.locations || [])[0] || '口醫部會議室');
   const [customLocation, setCustomLocation] = useState('');
   const [advisors, setAdvisors] = useState<string[]>([]);
   const [customAdvisor, setCustomAdvisor] = useState('');
   const [presenter, setPresenter] = useState('');
+  const [customPresenter, setCustomPresenter] = useState('');
   const [recorder, setRecorder] = useState('');
+  const [customRecorder, setCustomRecorder] = useState('');
   const [remarks, setRemarks] = useState('');
 
   const parseTime = (timeStr: string) => {
@@ -121,33 +119,61 @@ export default function MeetingForm({
       
       // Load New Fields
       setTopic(editingMeeting.topic || '');
-      if (LOCATIONS.includes(editingMeeting.location || '')) {
-        setLocation(editingMeeting.location || '口醫部會議室');
+      if ((settings.locations || []).concat('其他').includes(editingMeeting.location || '')) {
+        setLocation(editingMeeting.location || (settings.locations || [])[0] || '口醫部會議室');
         setCustomLocation('');
       } else {
         setLocation('其他');
         setCustomLocation(editingMeeting.location || '');
       }
       setAdvisors(editingMeeting.advisors?.map(a => a.replace('醫師', '')) || []);
-      setPresenter(editingMeeting.presenter?.replace('醫師', '') || '');
-      setRecorder(editingMeeting.recorder?.replace('醫師', '') || '');
-      setRemarks(editingMeeting.remarks || '');
+      
+      // Handle Presenter
+      const rawPresenter = editingMeeting.presenter || '';
+      if ((settings.participants || []).concat('其他').includes(rawPresenter)) {
+        setPresenter(rawPresenter);
+        setCustomPresenter('');
+      } else if (rawPresenter) {
+        setPresenter('其他');
+        setCustomPresenter(rawPresenter);
+      } else {
+        setPresenter('');
+        setCustomPresenter('');
+      }
 
+      // Handle Recorder
+      const rawRecorder = editingMeeting.recorder || '';
+      if ((settings.participants || []).concat('其他').includes(rawRecorder)) {
+        setRecorder(rawRecorder);
+        setCustomRecorder('');
+      } else if (rawRecorder) {
+        setRecorder('其他');
+        setCustomRecorder(rawRecorder);
+      } else {
+        setRecorder('');
+        setCustomRecorder('');
+      }
+
+      setRemarks(editingMeeting.remarks || '');
       setFrequency(Frequency.SPECIFIC);
     } else {
       setDepartment(Department.ADMIN);
       setContent(DEPARTMENT_CONTENTS[Department.ADMIN][0]);
       setCustomContent('');
       setTopic('');
-      setLocation('口醫部會議室');
+      if (location !== '其他') {
+        setLocation((settings.locations || [])[0] || '口醫部會議室');
+      }
       setCustomLocation('');
       setAdvisors([]);
       setPresenter('');
+      setCustomPresenter('');
       setRecorder('');
+      setCustomRecorder('');
       setRemarks('');
       setFrequency(Frequency.SPECIFIC);
     }
-  }, [editingMeeting]);
+  }, [editingMeeting, settings.locations, settings.participants]);
 
   const toggleAdvisor = (name: string) => {
     setAdvisors(prev => 
@@ -165,10 +191,22 @@ export default function MeetingForm({
     const finalLocation = location === '其他' ? customLocation : location;
     const finalAdvisors = advisors.map(a => a.endsWith('醫師') ? a : `${a}醫師`);
     if (customAdvisor) {
-      finalAdvisors.push(customAdvisor.endsWith('醫師') ? customAdvisor : `${customAdvisor}醫師`);
+      const fixedName = customAdvisor.endsWith('醫師') ? customAdvisor : `${customAdvisor}醫師`;
+      if (!finalAdvisors.includes(fixedName)) {
+        finalAdvisors.push(fixedName);
+      }
     }
-    const finalPresenter = presenter ? (presenter.endsWith('醫師') ? presenter : `${presenter}醫師`) : '';
-    const finalRecorder = recorder ? (recorder.endsWith('醫師') ? recorder : `${recorder}醫師`) : '';
+
+    const applySuffix = (name: string) => {
+      if (!name) return '';
+      const roles = ['FR', 'PGY', 'Int'];
+      if (roles.some(role => name.toUpperCase().startsWith(role.toUpperCase()))) return name;
+      if (name.endsWith('醫師')) return name;
+      return `${name}醫師`;
+    };
+
+    const finalPresenter = presenter === '其他' ? applySuffix(customPresenter) : presenter;
+    const finalRecorder = recorder === '其他' ? applySuffix(customRecorder) : recorder;
 
     const firstDate = new Date(startDate);
     const groupId = Math.random().toString(36).substring(7);
@@ -311,7 +349,7 @@ export default function MeetingForm({
       <div className="flex items-center justify-between">
         <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
           {editingMeeting ? <Save size={16} className="text-medical-primary" /> : <Plus size={16} className="text-medical-primary" />}
-          {editingMeeting ? '編輯會議內容' : '1. 選擇會議項目'}
+          {editingMeeting ? '編輯會議內容' : '會議內容'}
         </h3>
         {editingMeeting && (
           <button onClick={onCancelEdit} className="text-slate-400 hover:text-slate-600">
@@ -347,7 +385,7 @@ export default function MeetingForm({
         {/* Content Selection */}
         {department !== Department.OTHER && DEPARTMENT_CONTENTS[department] && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600">會議內容</label>
+            <label className="text-xs font-semibold text-slate-600">子項目</label>
             <div className="grid grid-cols-2 gap-2">
               {DEPARTMENT_CONTENTS[department].map(c => (
                 <div
@@ -370,7 +408,7 @@ export default function MeetingForm({
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 font-bold text-sky-600">自行輸入</label>
+            <label className="text-xs font-semibold text-slate-600 font-bold text-sky-600">自行輸入內容</label>
             <input
               type="text"
               value={customContent}
@@ -406,7 +444,7 @@ export default function MeetingForm({
               onChange={(e) => setLocation(e.target.value)}
               className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-bold text-slate-700"
             >
-              {LOCATIONS.map(loc => (
+              {(settings.locations || []).concat('其他').map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
@@ -428,7 +466,7 @@ export default function MeetingForm({
             <Users size={12} /> 指導醫師 (選填, 可複選)
           </label>
           <div className="grid grid-cols-3 gap-1.5">
-            {ADVISORS_LIST.map(name => (
+            {(settings.advisors || []).map(name => (
               <button
                 key={name}
                 type="button"
@@ -449,37 +487,65 @@ export default function MeetingForm({
               type="text"
               value={customAdvisor}
               onChange={(e) => setCustomAdvisor(e.target.value)}
-              placeholder="其他指導醫師 (姓名將自動加上醫師)..."
+              placeholder="請輸入姓名"
               className="w-full p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] outline-none focus:border-sky-500"
             />
           </div>
         </div>
 
         {/* Presenter & Recorder */}
-        <div className="flex gap-4">
-          <div className="flex-1 space-y-1.5">
+        <div className="flex flex-col gap-4">
+          <div className="space-y-1.5 flex-1">
             <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
               <User size={12} /> 報告者 (選填)
             </label>
-            <input
-              type="text"
-              value={presenter}
-              onChange={(e) => setPresenter(e.target.value)}
-              placeholder="姓名 (自動加醫師)"
-              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-            />
+            <div className="flex gap-2">
+              <select
+                value={presenter}
+                onChange={(e) => setPresenter(e.target.value)}
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-sky-500"
+              >
+                <option value="">請選擇報告者</option>
+                {(settings.participants || []).concat('其他').map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              {presenter === '其他' && (
+                <input
+                  type="text"
+                  value={customPresenter}
+                  onChange={(e) => setCustomPresenter(e.target.value)}
+                  placeholder="輸入姓名"
+                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+                />
+              )}
+            </div>
           </div>
-          <div className="flex-1 space-y-1.5">
+          <div className="space-y-1.5 flex-1">
             <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
               <User size={12} /> 紀錄者 (選填)
             </label>
-            <input
-              type="text"
-              value={recorder}
-              onChange={(e) => setRecorder(e.target.value)}
-              placeholder="姓名 (自動加醫師)"
-              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-            />
+            <div className="flex gap-2">
+              <select
+                value={recorder}
+                onChange={(e) => setRecorder(e.target.value)}
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-sky-500"
+              >
+                <option value="">請選擇紀錄者</option>
+                {(settings.participants || []).concat('其他').map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              {recorder === '其他' && (
+                <input
+                  type="text"
+                  value={customRecorder}
+                  onChange={(e) => setCustomRecorder(e.target.value)}
+                  placeholder="輸入姓名"
+                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -498,7 +564,7 @@ export default function MeetingForm({
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">2. 時間與頻率範圍</h3>
+          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">時間</h3>
           
           <div className="space-y-3">
             <label className="text-xs font-semibold text-slate-600">頻率模式</label>

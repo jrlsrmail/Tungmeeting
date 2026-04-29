@@ -6,12 +6,21 @@ import {
   Settings, 
   ClipboardList,
   RotateCcw,
-  RotateCw
+  RotateCw,
+  Plus,
+  Users,
+  MapPin,
+  User
 } from 'lucide-react';
 import Calendar from './Calendar';
 import MeetingForm from './MeetingForm';
 import RecentMeetingsList from './RecentMeetingsList';
-import { Meeting } from './types';
+import { Meeting, AppSettings } from './types';
+import { cn } from './lib/utils';
+
+const DEFAULT_ADVISORS = ["陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"];
+const DEFAULT_LOCATIONS = ["口醫部會議室", "遠距會議", "臨床示範室"];
+const DEFAULT_PARTICIPANTS = ["FR何宜蓁", "PGY謝皓胤", "PGY鄧惠璇", "PGY彭品蓁", "PGY張言駿", "PGY陳冠妤", "PGY馮筠婷", "PGY黃庭暐", "PGY何浩辰", "Int 王日羲", "Int 徐一華"];
 
 // Enhanced Undo/Redo Hook with LocalStorage sync
 function useHistory<T>(storageKey: string, initialState: T) {
@@ -89,7 +98,32 @@ export default function App() {
     canRedo 
   } = useHistory<Meeting[]>('hospital_meetings_v4', []);
   
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem('hospital_settings_v4');
+    const defaults = { 
+      advisors: DEFAULT_ADVISORS, 
+      locations: DEFAULT_LOCATIONS, 
+      participants: DEFAULT_PARTICIPANTS 
+    };
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return { ...defaults, ...parsed };
+      } catch (e) {
+        return defaults;
+      }
+    }
+    return defaults;
+  });
+
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [activeView, setActiveView] = useState<'calendar' | 'settings'>('calendar');
+  const [priorityView, setPriorityView] = useState<'calendar' | 'recent'>('calendar');
+
+  useEffect(() => {
+    localStorage.setItem('hospital_settings_v4', JSON.stringify(settings));
+  }, [settings]);
 
   // Keyboard shortcuts for Undo/Redo
   useEffect(() => {
@@ -112,11 +146,13 @@ export default function App() {
 
   const handleAddMeetings = (newMeetings: Meeting[]) => {
     setMeetings(prev => [...prev, ...newMeetings]);
+    setShowForm(false);
   };
 
   const handleUpdateMeeting = (updatedMeeting: Meeting) => {
     setMeetings(prev => prev.map(m => m.id === updatedMeeting.id ? updatedMeeting : m));
     setEditingMeeting(null);
+    setShowForm(false);
   };
 
   const handleDeleteMeeting = (id: string) => {
@@ -133,56 +169,70 @@ export default function App() {
     setMeetings(prev => prev.map(m => m.id === id ? { ...m, date: newDate } : m));
   };
 
+  const handleEditRequest = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
+    setShowForm(true);
+  };
+
   return (
     <div className="flex h-screen bg-medical-bg overflow-hidden font-sans">
       {/* Side Rail - Desktop */}
-      <aside className="hidden lg:flex w-64 flex-col bg-white border-r border-slate-100 p-4 shrink-0">
-        <div className="flex items-center gap-3 px-2 mb-10 mt-2">
-          <div className="w-10 h-10 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-sky-100">
-            <Hospital size={22} />
+      <aside className="hidden lg:flex w-56 flex-col bg-white border-r border-slate-100 p-4 shrink-0 transition-all">
+        <div className="flex items-center gap-3 px-1 mb-10 mt-2">
+          <div className="w-9 h-9 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-sky-100 shrink-0">
+            <Hospital size={20} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-[12px] font-bold text-slate-800 leading-tight truncate">童綜合醫院口醫部</h1>
-            <p className="text-[10px] text-slate-400 font-mono">會議排程系統</p>
+            <h1 className="text-[11px] font-black text-slate-800 leading-tight">童綜合醫院口醫部</h1>
+            <p className="text-[9px] text-slate-400 font-bold">會議排程系統</p>
           </div>
         </div>
 
-        <nav className="space-y-1 flex-1">
-          <button className="side-rail-btn active">
-            <CalendarIcon size={18} /> 行事曆預覽
+        <nav className="space-y-1.5 flex-1">
+          <button 
+            onClick={() => {
+              setActiveView('calendar');
+              setPriorityView('calendar');
+            }}
+            className={cn("side-rail-btn", activeView === 'calendar' && priorityView === 'calendar' && "active")}
+          >
+            <CalendarIcon size={18} /> 行事曆
           </button>
-          <button className="side-rail-btn">
-            <ClipboardList size={18} /> 會議列表管理
+
+          <button 
+            onClick={() => {
+              setActiveView('calendar');
+              setPriorityView('recent');
+            }}
+            className={cn("side-rail-btn", activeView === 'calendar' && priorityView === 'recent' && "active")}
+          >
+            <ClipboardList size={18} /> 近期排定會議
           </button>
-          <div className="pt-4 pb-2 px-2 border-t border-slate-50 mt-4">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">操作歷史 (Ctrl+Z/Y)</p>
-            <div className="flex gap-2">
-              <button 
-                onClick={undo} 
-                disabled={!canUndo}
-                className="flex-1 py-2 flex items-center justify-center bg-slate-50 border border-slate-100 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all font-bold text-[10px] gap-1"
-                title="Undo (Ctrl+Z)"
-              >
-                <RotateCcw size={14} /> 復原
-              </button>
-              <button 
-                onClick={redo} 
-                disabled={!canRedo}
-                className="flex-1 py-2 flex items-center justify-center bg-slate-50 border border-slate-100 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all font-bold text-[10px] gap-1"
-                title="Redo (Ctrl+Y)"
-              >
-                <RotateCw size={14} /> 重做
-              </button>
-            </div>
-          </div>
-          <button className="side-rail-btn">
+          
+          <button 
+            onClick={() => {
+              setEditingMeeting(null);
+              setShowForm(!showForm);
+            }}
+            className={cn(
+              "side-rail-btn transition-all duration-300", 
+              showForm && "bg-sky-500 text-white hover:bg-sky-600 hover:text-white shadow-lg shadow-sky-100"
+            )}
+          >
+            <Plus size={18} /> 新增會議
+          </button>
+
+          <button 
+            onClick={() => setActiveView('settings')}
+            className={cn("side-rail-btn", activeView === 'settings' && "active")}
+          >
             <Settings size={18} /> 系統偏好設定
           </button>
         </nav>
 
-        <div className="mt-auto p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
-          <p className="text-[10px] text-slate-500 font-medium mb-1 uppercase tracking-wider">今日狀態</p>
-          <p className="text-sm font-bold text-slate-700">{meetings.length} 場會議排定</p>
+        <div className="mt-auto p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
+          <p className="text-[9px] text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
+          <p className="text-xs font-bold text-slate-700">{meetings.length} 場會議</p>
         </div>
       </aside>
 
@@ -194,62 +244,177 @@ export default function App() {
             <div className="w-8 h-8 bg-medical-primary rounded-lg flex items-center justify-center text-white">
               <Hospital size={16} />
             </div>
-            <h1 className="text-base font-bold">口醫部會議排程</h1>
+            <h1 className="text-sm font-bold">口醫部會議排程</h1>
           </div>
-          <div className="flex gap-2">
-            <button onClick={undo} disabled={!canUndo} className="p-2 text-slate-400 disabled:opacity-20"><RotateCcw size={18} /></button>
-            <button onClick={redo} disabled={!canRedo} className="p-2 text-slate-400 disabled:opacity-20"><RotateCw size={18} /></button>
-          </div>
+          <button 
+            onClick={() => setShowForm(!showForm)}
+            className="p-2 bg-sky-500 text-white rounded-lg"
+          >
+            <Plus size={18} />
+          </button>
         </header>
 
         {/* Scrollable Workspace */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scrollbar-hide">
-          <div className="max-w-6xl mx-auto flex flex-col gap-8">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Form Section */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="w-full lg:w-[450px] shrink-0 lg:sticky lg:top-0 h-fit"
-              >
-                <MeetingForm 
-                  onAddMeetings={handleAddMeetings}
-                  onUpdateMeeting={handleUpdateMeeting}
-                  onDeleteMeeting={handleDeleteMeeting}
-                  onDeleteSeries={handleDeleteAllInGroup}
-                  editingMeeting={editingMeeting}
-                  onCancelEdit={() => setEditingMeeting(null)}
-                />
-              </motion.div>
+          <div className="max-w-[1400px] mx-auto">
+            <div className="flex gap-8 items-start">
+              {/* Form Section - Toggleable Desktop */}
+              <AnimatePresence>
+                {showForm && (
+                  <motion.div 
+                    initial={{ opacity: 0, width: 0, x: -20 }}
+                    animate={{ opacity: 1, width: 420, x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -20 }}
+                    className="shrink-0 sticky top-0 overflow-hidden"
+                  >
+                    <MeetingForm 
+                      onAddMeetings={handleAddMeetings}
+                      onUpdateMeeting={handleUpdateMeeting}
+                      onDeleteMeeting={handleDeleteMeeting}
+                      onDeleteSeries={handleDeleteAllInGroup}
+                      editingMeeting={editingMeeting}
+                      settings={settings}
+                      onCancelEdit={() => {
+                        setEditingMeeting(null);
+                        setShowForm(false);
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {/* Data Section */}
-              <div className="flex-1 w-full space-y-8 min-w-0">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Calendar 
-                    meetings={meetings} 
-                    onEditMeeting={setEditingMeeting}
-                    onDeleteMeeting={handleDeleteMeeting}
-                    onMoveMeeting={handleMoveMeeting}
-                  />
-                </motion.div>
+              {/* View Section */}
+              <div className="flex-1 min-w-0 space-y-8">
+                {activeView === 'calendar' ? (
+                  <div className="flex flex-col gap-8">
+                    {/* Render components based on priorityView */}
+                    {priorityView === 'calendar' ? (
+                      <>
+                        <motion.div 
+                          key="calendar"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <Calendar 
+                            meetings={meetings} 
+                            onEditMeeting={handleEditRequest}
+                            onDeleteMeeting={handleDeleteMeeting}
+                            onMoveMeeting={handleMoveMeeting}
+                          />
+                        </motion.div>
 
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="grid grid-cols-1 md:grid-cols-1 gap-8"
-                >
-                  <RecentMeetingsList 
-                    meetings={meetings}
-                    onEdit={setEditingMeeting}
-                    onDelete={handleDeleteMeeting}
-                    onDeleteSeries={handleDeleteAllInGroup}
-                  />
-                </motion.div>
+                        <motion.div 
+                          key="recent"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 }}
+                        >
+                          <RecentMeetingsList 
+                            meetings={meetings}
+                            onEdit={handleEditRequest}
+                            onDelete={handleDeleteMeeting}
+                            onDeleteSeries={handleDeleteAllInGroup}
+                          />
+                        </motion.div>
+                      </>
+                    ) : (
+                      <>
+                        <motion.div 
+                          key="recent-priority"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <RecentMeetingsList 
+                            meetings={meetings}
+                            onEdit={handleEditRequest}
+                            onDelete={handleDeleteMeeting}
+                            onDeleteSeries={handleDeleteAllInGroup}
+                          />
+                        </motion.div>
+
+                        <motion.div 
+                          key="calendar-secondary"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 }}
+                        >
+                          <Calendar 
+                            meetings={meetings} 
+                            onEditMeeting={handleEditRequest}
+                            onDeleteMeeting={handleDeleteMeeting}
+                            onMoveMeeting={handleMoveMeeting}
+                          />
+                        </motion.div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <motion.div
+                    key="settings"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="dashboard-card max-w-2xl mx-auto"
+                  >
+                    <div className="accent-line !bg-medical-primary"></div>
+                    <h2 className="text-xl font-black text-slate-800 mb-8 border-b border-slate-100 pb-4">系統偏好設定</h2>
+                    
+                    <div className="space-y-10">
+                      {/* Advisor Settings */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
+                           <Users size={16} className="text-medical-primary" /> 指導醫師名單預設值
+                        </h3>
+                        <textarea 
+                          value={settings.advisors.join('\n')}
+                          onChange={(e) => setSettings({ ...settings, advisors: e.target.value.split('\n').filter(Boolean) })}
+                          rows={6}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          placeholder="每行輸入一位醫師姓名..."
+                        />
+                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                      </div>
+
+                      {/* Participant Settings */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
+                           <User size={16} className="text-medical-primary" /> 報告者/紀錄者名單預設值
+                        </h3>
+                        <textarea 
+                          value={settings.participants.join('\n')}
+                          onChange={(e) => setSettings({ ...settings, participants: e.target.value.split('\n').filter(Boolean) })}
+                          rows={6}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          placeholder="每行輸入一個姓名..."
+                        />
+                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                      </div>
+
+                      {/* Location Settings */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
+                           <MapPin size={16} className="text-medical-primary" /> 地點選項預設值
+                        </h3>
+                        <textarea 
+                          value={settings.locations.join('\n')}
+                          onChange={(e) => setSettings({ ...settings, locations: e.target.value.split('\n').filter(Boolean) })}
+                          rows={4}
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          placeholder="每行輸入一個地點..."
+                        />
+                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                      </div>
+
+                      <div className="pt-4 flex justify-end">
+                        <button 
+                          onClick={() => setActiveView('calendar')}
+                          className="btn-medical px-8"
+                        >
+                          儲存並返回
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
           </div>
@@ -258,13 +423,16 @@ export default function App() {
 
       {/* Mobile Overlay for Editing */}
       <AnimatePresence>
-        {editingMeeting && (
+        {(editingMeeting || (showForm && window.innerWidth < 1024)) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] lg:hidden flex items-end sm:items-center justify-center p-4"
-            onClick={() => setEditingMeeting(null)}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] lg:hidden flex items-end justify-center p-4"
+            onClick={() => {
+              setEditingMeeting(null);
+              setShowForm(false);
+            }}
           >
             <motion.div 
               initial={{ y: "100%" }}
@@ -279,7 +447,11 @@ export default function App() {
                 onDeleteMeeting={handleDeleteMeeting}
                 onDeleteSeries={handleDeleteAllInGroup}
                 editingMeeting={editingMeeting}
-                onCancelEdit={() => setEditingMeeting(null)}
+                settings={settings}
+                onCancelEdit={() => {
+                  setEditingMeeting(null);
+                  setShowForm(false);
+                }}
               />
             </motion.div>
           </motion.div>

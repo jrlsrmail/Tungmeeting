@@ -61,3 +61,9 @@ export interface Meeting {
   recorder?: string;
   remarks?: string;
 }
+
+export interface AppSettings {
+  advisors: string[];
+  locations: string[];
+  participants: string[];
+}
