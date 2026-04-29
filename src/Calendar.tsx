@@ -9,9 +9,10 @@ interface CalendarProps {
   onEditMeeting: (meeting: Meeting) => void;
   onDeleteMeeting: (id: string) => void;
   onMoveMeeting: (id: string, newDate: Date) => void;
+  onDateClick: (date: Date) => void;
 }
 
-export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onMoveMeeting }: CalendarProps) {
+export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onMoveMeeting, onDateClick }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [draggedMeetingId, setDraggedMeetingId] = useState<string | null>(null);
 
@@ -73,7 +74,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
             <select 
               value={currentMonth.getFullYear()} 
               onChange={handleYearChange}
-              className="text-lg font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
+              className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
             >
               {[2026, 2027, 2028, 2029, 2030].map(year => (
                 <option key={year} value={year}>{year}年</option>
@@ -82,14 +83,14 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
             <select 
               value={currentMonth.getMonth()} 
               onChange={handleMonthChange}
-              className="text-lg font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
+              className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
             >
               {Array.from({ length: 12 }).map((_, i) => (
                 <option key={i} value={i}>{i + 1}月</option>
               ))}
             </select>
           </div>
-          <p className="text-[10px] text-slate-400 font-medium tracking-wider">MEETING SCHEDULE</p>
+          <p className="text-xs text-slate-400 font-bold tracking-wider">MEETING SCHEDULE</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -117,7 +118,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
         {['週日', '週一', '週二', '週三', '週四', '週五', '週六'].map((day) => (
           <div
             key={day}
-            className="py-3 text-center text-[10px] font-bold text-slate-400 bg-slate-50/50 border-r border-slate-100 border-b border-slate-100 uppercase tracking-widest"
+            className="py-4 text-center text-sm font-black text-slate-500 bg-slate-50/50 border-r border-slate-100 border-b border-slate-100 uppercase tracking-widest"
           >
             {day}
           </div>
@@ -131,10 +132,11 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
           return (
             <div
               key={day.toString()}
+              onClick={() => onDateClick(day)}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(day)}
               className={cn(
-                "min-h-[120px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group",
+                "min-h-[120px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group cursor-pointer",
                 !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-medical-surface hover:bg-amber-50/50",
                 draggedMeetingId && isCurrentMonth && "bg-amber-50/50",
                 idx % 7 === 6 && "border-r-0"
@@ -143,7 +145,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
               <div className="flex justify-between items-start mb-1">
                 <span
                   className={cn(
-                    "text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-lg transition-colors",
+                    "text-base font-bold w-9 h-9 flex items-center justify-center rounded-lg transition-colors",
                     isToday ? "bg-medical-primary text-white shadow-md shadow-amber-100" : "text-slate-500",
                     !isCurrentMonth && "opacity-20"
                   )}
@@ -162,9 +164,12 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
                       key={meeting.id}
                       draggable
                       onDragStart={() => handleDragStart(meeting.id)}
-                      onClick={() => onEditMeeting(meeting)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditMeeting(meeting);
+                      }}
                       className={cn(
-                        "cursor-move p-1.5 rounded-lg text-[8px] leading-snug font-bold transition-all border",
+                        "cursor-move p-2 rounded-lg text-xs leading-snug font-bold transition-all border",
                         isHighlight 
                           ? "bg-rose-50 border-rose-200 text-rose-600 shadow-sm" 
                           : "bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary border-medical-primary/10",

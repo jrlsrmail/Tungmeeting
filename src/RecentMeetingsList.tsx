@@ -29,10 +29,10 @@ export default function RecentMeetingsList({
       <div className="accent-line !bg-medical-accent"></div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
-            <Clock size={16} className="text-medical-accent" /> 近期排定會議
+          <h3 className="text-sm uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
+            <Clock size={18} className="text-medical-accent" /> 近期排定會議
           </h3>
-          <p className="text-[10px] text-slate-400 font-medium">UPCOMING MEETINGS</p>
+          <p className="text-xs text-slate-400 font-medium">UPCOMING MEETINGS</p>
         </div>
       </div>
 
@@ -84,36 +84,36 @@ export default function RecentMeetingsList({
                   <div className="flex justify-between items-start">
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full uppercase">
+                        <span className="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full uppercase">
                           {format(new Date(meeting.date), 'yyyy.MM.dd')}
                         </span>
-                        <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-bold rounded-full">
+                        <span className="px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full">
                           {meeting.startTime} - {meeting.endTime}
                         </span>
                       </div>
-                      <h4 className="text-sm font-black text-slate-800 flex items-center gap-1.5 mt-1">
+                      <h4 className="text-lg font-black text-slate-800 flex items-center gap-2 mt-1">
                         <span className="text-medical-primary">[{meeting.department}]</span>
                         {meeting.content}
                       </h4>
                     </div>
                     
-                    <div className="flex gap-1">
+                    <div className="flex gap-2">
                       <button 
                         onClick={() => onEdit(meeting)}
-                        className="p-1.5 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-200 text-slate-400 hover:text-medical-primary rounded-lg transition-all"
+                        className="p-2 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-200 text-slate-400 hover:text-medical-primary rounded-lg transition-all"
                       >
-                        <Edit2 size={12} />
+                        <Edit2 size={16} />
                       </button>
                       <button 
                         onClick={() => setDeletingId(meeting.id)}
-                        className="p-1.5 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-all"
+                        className="p-2 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-all"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 border-t border-slate-100 pt-3 text-[10px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 border-t border-slate-100 pt-4 text-xs">
                     {meeting.topic && (
                       <div className="flex items-center gap-1.5 text-slate-500">
                         <Type size={12} className="text-slate-400" />

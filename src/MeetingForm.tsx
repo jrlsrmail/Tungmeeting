@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, addWeeks, addDays, getDay, startOfMonth } from 'date-fns';
-import { Plus, X, Calendar as CalendarIcon, Clock, Trash2, Save, MapPin, User, Users, Info, Type } from 'lucide-react';
+import { Plus, X, Calendar as CalendarIcon, Clock, Trash2, Save, MapPin, User, Users, Info, Type, Hospital } from 'lucide-react';
 import { Department, DEPARTMENT_CONTENTS, Frequency, Meeting, AppSettings } from './types';
 import { cn } from './lib/utils';
 
@@ -12,6 +12,7 @@ interface MeetingFormProps {
   editingMeeting: Meeting | null;
   onCancelEdit: () => void;
   settings: AppSettings;
+  preselectedDate?: string | null;
 }
 
 const DAYS_OF_WEEK = [
@@ -31,7 +32,8 @@ export default function MeetingForm({
   onDeleteSeries,
   editingMeeting, 
   onCancelEdit,
-  settings
+  settings,
+  preselectedDate
 }: MeetingFormProps) {
   const [department, setDepartment] = useState<Department>(Department.ADMIN);
   const [content, setContent] = useState('');
@@ -74,14 +76,14 @@ export default function MeetingForm({
     const { h, m } = parseTime(value);
     return (
       <div className="space-y-1.5 flex-1">
-        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-          <Clock size={12} /> {label}
+        <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+          <Clock size={16} /> {label}
         </label>
         <div className="flex gap-1">
           <select 
             value={h} 
             onChange={(e) => onChange('h', e.target.value)}
-            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
+            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 font-bold text-slate-700"
           >
             {Array.from({ length: 24 }).map((_, i) => (
               <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
@@ -90,10 +92,10 @@ export default function MeetingForm({
           <select 
             value={m} 
             onChange={(e) => onChange('m', e.target.value)}
-            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
+            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 font-bold text-slate-700"
           >
             {['00', '10', '20', '30', '40', '50'].map(val => (
-              <option key={val} value={val}>{val}</option>
+                <option key={val} value={val}>{val}</option>
             ))}
           </select>
         </div>
@@ -172,8 +174,11 @@ export default function MeetingForm({
       setCustomRecorder('');
       setRemarks('');
       setFrequency(Frequency.SPECIFIC);
+      if (preselectedDate) {
+        setStartDate(preselectedDate);
+      }
     }
-  }, [editingMeeting, settings.locations, settings.participants]);
+  }, [editingMeeting, settings.locations, settings.participants, preselectedDate]);
 
   const toggleAdvisor = (name: string) => {
     setAdvisors(prev => 
@@ -347,21 +352,21 @@ export default function MeetingForm({
     <div className="dashboard-card space-y-6">
       <div className="accent-line !bg-medical-primary"></div>
       <div className="flex items-center justify-between">
-        <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
-          {editingMeeting ? <Save size={16} className="text-medical-primary" /> : <Plus size={16} className="text-medical-primary" />}
+        <h3 className="text-sm uppercase tracking-wider text-slate-400 font-bold flex items-center gap-2">
+          {editingMeeting ? <Save size={18} className="text-medical-primary" /> : <Plus size={18} className="text-medical-primary" />}
           {editingMeeting ? '編輯會議內容' : '會議內容'}
         </h3>
         {editingMeeting && (
           <button onClick={onCancelEdit} className="text-slate-400 hover:text-slate-600">
-            <X size={16} />
+            <X size={18} />
           </button>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {/* Department Selection */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600">科別</label>
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-600">科別</label>
           <select 
             value={department}
             onChange={(e) => {
@@ -374,7 +379,7 @@ export default function MeetingForm({
                 setContent('其他');
               }
             }}
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all appearance-none"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all appearance-none font-bold text-slate-700"
           >
             {Object.values(Department).map(dept => (
               <option key={dept} value={dept}>{dept}</option>
@@ -384,17 +389,17 @@ export default function MeetingForm({
 
         {/* Content Selection */}
         {department !== Department.OTHER && DEPARTMENT_CONTENTS[department] && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600">子項目</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-600">子項目</label>
+            <div className="grid grid-cols-2 gap-2.5">
               {DEPARTMENT_CONTENTS[department].map(c => (
                 <div
                   key={c}
                   onClick={() => setContent(c)}
                   className={cn(
-                    "p-2 text-[11px] border rounded-xl cursor-pointer transition-all text-center flex items-center justify-center min-h-[40px]",
+                    "p-2.5 text-xs border rounded-xl cursor-pointer transition-all text-center flex items-center justify-center min-h-[48px]",
                     content === c 
-                      ? "bg-amber-50 border-medical-border text-medical-primary font-bold shadow-inner" 
+                      ? "bg-amber-50 border-medical-border text-medical-primary font-black shadow-inner" 
                       : "border-slate-50 hover:bg-slate-50 text-slate-500"
                   )}
                 >
@@ -407,42 +412,42 @@ export default function MeetingForm({
 
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 font-bold text-amber-600">自行輸入內容</label>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-600 font-bold text-amber-600">自行輸入內容</label>
             <input
               type="text"
               value={customContent}
               onChange={(e) => setCustomContent(e.target.value)}
               placeholder="請輸入會議內容..."
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all"
             />
           </div>
         )}
 
         {/* Topic Input */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-            <Type size={12} /> 課程主題 (選填)
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+            <Type size={16} /> 課程主題 (選填)
           </label>
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="請輸入課程主題..."
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all"
           />
         </div>
 
         {/* Location Selection */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-            <MapPin size={12} /> 地點 (選填)
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+            <MapPin size={16} /> 地點 (選填)
           </label>
           <div className="flex gap-2">
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
+              className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
             >
               {(settings.locations || []).concat('其他').map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
@@ -454,27 +459,27 @@ export default function MeetingForm({
                 value={customLocation}
                 onChange={(e) => setCustomLocation(e.target.value)}
                 placeholder="請輸入地點..."
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
+                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
               />
             )}
           </div>
         </div>
 
         {/* Advisors Selection */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1 text-amber-700">
-            <Users size={12} /> 指導醫師 (選填, 可複選)
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-600 flex items-center gap-2 text-amber-700">
+            <Users size={16} /> 指導醫師 (選填, 可複選)
           </label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-2">
             {(settings.advisors || []).map(name => (
               <button
                 key={name}
                 type="button"
                 onClick={() => toggleAdvisor(name)}
                 className={cn(
-                  "p-1.5 text-[10px] border rounded-lg transition-all",
+                  "p-2 text-xs border rounded-lg transition-all",
                   advisors.includes(name)
-                    ? "bg-amber-600 text-white border-amber-600 font-bold"
+                    ? "bg-amber-600 text-white border-amber-600 font-black"
                     : "bg-amber-50 border-amber-100 text-amber-700 hover:border-amber-200"
                 )}
               >
@@ -488,22 +493,22 @@ export default function MeetingForm({
               value={customAdvisor}
               onChange={(e) => setCustomAdvisor(e.target.value)}
               placeholder="請輸入姓名"
-              className="w-full p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] outline-none focus:border-amber-500"
+              className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs outline-none focus:border-amber-500"
             />
           </div>
         </div>
 
         {/* Presenter & Recorder */}
-        <div className="flex flex-col gap-4">
-          <div className="space-y-1.5 flex-1">
-            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <User size={12} /> 報告者 (選填)
+        <div className="flex flex-col gap-5">
+          <div className="space-y-2 flex-1">
+            <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+              <User size={16} /> 報告者 (選填)
             </label>
             <div className="flex gap-2">
               <select
                 value={presenter}
                 onChange={(e) => setPresenter(e.target.value)}
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
+                className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold text-slate-700 outline-none focus:border-amber-500"
               >
                 <option value="">請選擇報告者</option>
                 {(settings.participants || []).concat('其他').map(p => (
@@ -516,20 +521,20 @@ export default function MeetingForm({
                   value={customPresenter}
                   onChange={(e) => setCustomPresenter(e.target.value)}
                   placeholder="輸入姓名"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
+                  className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500"
                 />
               )}
             </div>
           </div>
-          <div className="space-y-1.5 flex-1">
-            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <User size={12} /> 紀錄者 (選填)
+          <div className="space-y-2 flex-1">
+            <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+              <User size={16} /> 紀錄者 (選填)
             </label>
             <div className="flex gap-2">
               <select
                 value={recorder}
                 onChange={(e) => setRecorder(e.target.value)}
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
+                className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold text-slate-700 outline-none focus:border-amber-500"
               >
                 <option value="">請選擇紀錄者</option>
                 {(settings.participants || []).concat('其他').map(p => (
@@ -542,7 +547,7 @@ export default function MeetingForm({
                   value={customRecorder}
                   onChange={(e) => setCustomRecorder(e.target.value)}
                   placeholder="輸入姓名"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
+                  className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500"
                 />
               )}
             </div>
@@ -550,34 +555,34 @@ export default function MeetingForm({
         </div>
 
         {/* Remarks */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-            <Info size={12} /> 備註 (選填)
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+            <Info size={16} /> 備註 (選填)
           </label>
           <textarea
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             placeholder="請輸入備註內容..."
             rows={2}
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all resize-none"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all resize-none"
           />
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold">時間</h3>
+        <div className="space-y-5 pt-5 border-t border-slate-100">
+          <h3 className="text-sm uppercase tracking-wider text-slate-400 font-black">時間</h3>
           
-          <div className="space-y-3">
-            <label className="text-xs font-semibold text-slate-600">頻率模式</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-slate-600">頻率模式</label>
+            <div className="grid grid-cols-2 gap-2.5">
               {Object.values(Frequency).map((f) => (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setFrequency(f)}
                   className={cn(
-                    "p-2 text-[10px] border rounded-xl transition-all font-medium",
+                    "p-2.5 text-xs border rounded-xl transition-all font-bold",
                     frequency === f 
-                      ? "bg-amber-500 border-amber-600 text-white font-bold shadow-md" 
+                      ? "bg-amber-500 border-amber-600 text-white shadow-md" 
                       : "border-slate-100 hover:bg-slate-50 text-slate-500"
                   )}
                 >
@@ -631,14 +636,14 @@ export default function MeetingForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <CalendarIcon size={12} /> {frequency === Frequency.SPECIFIC ? '會議日期' : '下一場會議日期'}
+            <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
+              <CalendarIcon size={16} /> {frequency === Frequency.SPECIFIC ? '會議日期' : '下一場會議日期'}
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-mono"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-mono"
             />
           </div>
           <div className="flex gap-4">
@@ -655,13 +660,13 @@ export default function MeetingForm({
           </div>
         </div>
 
-        <div className="pt-4 flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <button
             type="button"
             onClick={generateMeetings}
-            className="w-full btn-medical py-3"
+            className="w-full btn-medical py-4 text-base"
           >
-            {editingMeeting ? <Save size={18} /> : <Plus size={18} />}
+            {editingMeeting ? <Save size={20} /> : <Plus size={20} />}
             {editingMeeting ? '儲存變更' : (frequency === Frequency.SPECIFIC ? '新增此場會議' : '依頻率產生排程')}
           </button>
           
@@ -678,15 +683,15 @@ export default function MeetingForm({
                 </button>
               ) : (
                 <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
-                  <p className="text-[10px] text-slate-500 text-center font-bold mb-1">選擇刪除範圍</p>
-                  <div className="flex gap-2">
+                  <p className="text-xs text-slate-500 text-center font-bold mb-2">選擇刪除範圍</p>
+                  <div className="flex gap-3">
                     <button
                       type="button"
                       onClick={() => {
                         onDeleteMeeting(editingMeeting.id);
                         onCancelEdit();
                       }}
-                      className="flex-1 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-bold rounded-lg border border-rose-200 transition-all"
+                      className="flex-1 py-3 bg-rose-100 hover:bg-rose-200 text-rose-700 text-sm font-bold rounded-xl border border-rose-200 transition-all"
                     >
                       僅刪除此場
                     </button>
@@ -697,7 +702,7 @@ export default function MeetingForm({
                           onDeleteSeries(editingMeeting.groupId!);
                           onCancelEdit();
                         }}
-                        className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-bold rounded-lg shadow-sm transition-all"
+                        className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold rounded-xl shadow-sm transition-all"
                       >
                         刪除整個系列
                       </button>
@@ -706,7 +711,7 @@ export default function MeetingForm({
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="w-full py-1 text-[9px] text-slate-400 hover:text-slate-600 font-medium"
+                    className="w-full py-2 text-xs text-slate-400 hover:text-slate-600 font-bold"
                   >
                     取消刪除
                   </button>

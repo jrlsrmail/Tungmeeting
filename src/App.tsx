@@ -17,6 +17,7 @@ import MeetingForm from './MeetingForm';
 import RecentMeetingsList from './RecentMeetingsList';
 import { Meeting, AppSettings } from './types';
 import { cn } from './lib/utils';
+import { format } from 'date-fns';
 
 const DEFAULT_ADVISORS = ["陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"];
 const DEFAULT_LOCATIONS = ["口醫部會議室", "遠距會議", "臨床示範室"];
@@ -118,8 +119,24 @@ export default function App() {
 
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [preselectedDate, setPreselectedDate] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'calendar' | 'settings'>('calendar');
   const [priorityView, setPriorityView] = useState<'calendar' | 'recent'>('calendar');
+
+  const goHome = () => {
+    setActiveView('calendar');
+    setPriorityView('calendar');
+    setShowForm(false);
+    setEditingMeeting(null);
+    setPreselectedDate(null);
+  };
+
+  const handleDateClick = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    setPreselectedDate(dateStr);
+    setEditingMeeting(null);
+    setShowForm(true);
+  };
 
   useEffect(() => {
     localStorage.setItem('hospital_settings_v4', JSON.stringify(settings));
@@ -178,13 +195,16 @@ export default function App() {
     <div className="flex h-screen bg-medical-bg overflow-hidden font-sans">
       {/* Side Rail - Desktop */}
       <aside className="hidden lg:flex w-56 flex-col bg-medical-surface border-r border-medical-border p-4 shrink-0 transition-all">
-        <div className="flex items-center gap-3 px-1 mb-10 mt-2">
-          <div className="w-9 h-9 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-100 shrink-0">
-            <Hospital size={20} />
+        <div 
+          onClick={goHome}
+          className="flex items-center gap-3 px-1 mb-10 mt-2 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <div className="w-11 h-11 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-100 shrink-0">
+            <Hospital size={24} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-[11px] font-black text-slate-800 leading-tight">童綜合醫院口醫部</h1>
-            <p className="text-[9px] text-slate-400 font-bold">會議排程系統</p>
+            <h1 className="text-xl font-black text-slate-800 leading-tight">童綜合口醫部</h1>
+            <p className="text-sm text-slate-400 font-bold">會議排程系統</p>
           </div>
         </div>
 
@@ -212,14 +232,15 @@ export default function App() {
           <button 
             onClick={() => {
               setEditingMeeting(null);
+              setPreselectedDate(null);
               setShowForm(!showForm);
             }}
             className={cn(
-              "side-rail-btn transition-all duration-300", 
+              "side-rail-btn py-3 transition-all duration-300 text-base", 
               showForm && "bg-amber-500 text-white hover:bg-amber-600 hover:text-white shadow-lg shadow-amber-100"
             )}
           >
-            <Plus size={18} /> 新增會議
+            <Plus size={22} /> 新增會議
           </button>
 
           <button 
@@ -230,9 +251,9 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="mt-auto p-3 bg-amber-100/50 rounded-2xl border border-amber-100 mb-4">
-          <p className="text-[9px] text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
-          <p className="text-xs font-bold text-slate-700">{meetings.length} 場會議</p>
+        <div className="mt-auto p-4 bg-amber-100/50 rounded-2xl border border-amber-100 mb-4">
+          <p className="text-xs text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
+          <p className="text-sm font-bold text-slate-700">{meetings.length} 場會議</p>
         </div>
       </aside>
 
@@ -274,8 +295,10 @@ export default function App() {
                       onDeleteSeries={handleDeleteAllInGroup}
                       editingMeeting={editingMeeting}
                       settings={settings}
+                      preselectedDate={preselectedDate}
                       onCancelEdit={() => {
                         setEditingMeeting(null);
+                        setPreselectedDate(null);
                         setShowForm(false);
                       }}
                     />
@@ -300,6 +323,7 @@ export default function App() {
                             onEditMeeting={handleEditRequest}
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}
+                            onDateClick={handleDateClick}
                           />
                         </motion.div>
 
@@ -343,6 +367,7 @@ export default function App() {
                             onEditMeeting={handleEditRequest}
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}
+                            onDateClick={handleDateClick}
                           />
                         </motion.div>
                       </>
@@ -361,47 +386,47 @@ export default function App() {
                     <div className="space-y-10">
                       {/* Advisor Settings */}
                       <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
-                           <Users size={16} className="text-medical-primary" /> 指導醫師名單預設值
+                        <h3 className="text-base font-bold text-slate-600 flex items-center gap-2">
+                           <Users size={18} className="text-medical-primary" /> 指導醫師名單預設值
                         </h3>
                         <textarea 
                           value={settings.advisors.join('\n')}
                           onChange={(e) => setSettings({ ...settings, advisors: e.target.value.split('\n').filter(Boolean) })}
                           rows={6}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-mono outline-none focus:border-medical-primary"
                           placeholder="每行輸入一位醫師姓名..."
                         />
-                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                        <p className="text-xs text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
                       </div>
 
                       {/* Participant Settings */}
                       <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
-                           <User size={16} className="text-medical-primary" /> 報告者/紀錄者名單預設值
+                        <h3 className="text-base font-bold text-slate-600 flex items-center gap-2">
+                           <User size={18} className="text-medical-primary" /> 報告者/紀錄者名單預設值
                         </h3>
                         <textarea 
                           value={settings.participants.join('\n')}
                           onChange={(e) => setSettings({ ...settings, participants: e.target.value.split('\n').filter(Boolean) })}
                           rows={6}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-mono outline-none focus:border-medical-primary"
                           placeholder="每行輸入一個姓名..."
                         />
-                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                        <p className="text-xs text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
                       </div>
 
                       {/* Location Settings */}
                       <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
-                           <MapPin size={16} className="text-medical-primary" /> 地點選項預設值
+                        <h3 className="text-base font-bold text-slate-600 flex items-center gap-2">
+                           <MapPin size={18} className="text-medical-primary" /> 地點選項預設值
                         </h3>
                         <textarea 
                           value={settings.locations.join('\n')}
                           onChange={(e) => setSettings({ ...settings, locations: e.target.value.split('\n').filter(Boolean) })}
                           rows={4}
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:border-medical-primary"
+                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-mono outline-none focus:border-medical-primary"
                           placeholder="每行輸入一個地點..."
                         />
-                        <p className="text-[10px] text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
+                        <p className="text-xs text-slate-400 font-bold">請以換行符號隔開不同的項目。</p>
                       </div>
 
                       <div className="pt-4 flex justify-end">
