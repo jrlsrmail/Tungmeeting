@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format, isAfter, startOfToday } from 'date-fns';
-import { Trash2, Edit2, Clock } from 'lucide-react';
+import { Trash2, Edit2, Clock, X } from 'lucide-react';
 import { Meeting } from './types';
 import { cn } from './lib/utils';
 
@@ -8,9 +8,16 @@ interface RecentMeetingsListProps {
   meetings: Meeting[];
   onEdit: (meeting: Meeting) => void;
   onDelete: (id: string) => void;
+  onDeleteSeries: (groupId: string) => void;
 }
 
-export default function RecentMeetingsList({ meetings, onEdit, onDelete }: RecentMeetingsListProps) {
+export default function RecentMeetingsList({ 
+  meetings, 
+  onEdit, 
+  onDelete,
+  onDeleteSeries
+}: RecentMeetingsListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const today = startOfToday();
   const upcomingMeetings = meetings
     .filter(m => isAfter(new Date(m.date), today) || format(new Date(m.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
@@ -33,35 +40,68 @@ export default function RecentMeetingsList({ meetings, onEdit, onDelete }: Recen
               key={meeting.id}
               className="p-3 bg-slate-50/50 border border-slate-100 rounded-2xl flex justify-between items-center group transition-all hover:bg-sky-50/50 hover:border-sky-100"
             >
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-[10px] text-medical-primary font-bold font-mono flex items-center gap-1">
-                  <Clock size={10} />
-                  {format(new Date(meeting.date), 'yyyy.MM.dd')} {meeting.startTime}
-                </span>
-                <span className="text-xs font-bold text-slate-700 truncate">
-                  {meeting.department}
-                </span>
-                <span className="text-[10px] text-slate-500 truncate">
-                  {meeting.content}
-                </span>
-              </div>
-              
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  onClick={() => onEdit(meeting)}
-                  className="p-2 bg-white border border-slate-200 hover:bg-sky-100 hover:border-sky-200 text-slate-400 hover:text-medical-primary rounded-xl transition-all"
-                >
-                  <Edit2 size={12} />
-                </button>
-                <button 
-                  onClick={() => {
-                    if (confirm('確定刪除？')) onDelete(meeting.id);
-                  }}
-                  className="p-2 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+              {deletingId === meeting.id ? (
+                <div className="flex-1 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-rose-600">確定刪除此項？</span>
+                    <button onClick={() => setDeletingId(null)} className="text-slate-400 hover:text-slate-600">
+                      <X size={12} />
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onDelete(meeting.id);
+                        setDeletingId(null);
+                      }}
+                      className="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[9px] font-bold rounded-lg transition-colors"
+                    >
+                      僅刪除此場
+                    </button>
+                    {meeting.groupId && (
+                      <button
+                        onClick={() => {
+                          onDeleteSeries(meeting.groupId!);
+                          setDeletingId(null);
+                        }}
+                        className="flex-1 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-bold rounded-lg transition-colors shadow-sm"
+                      >
+                        刪除整個系列
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="text-[10px] text-medical-primary font-bold font-mono flex items-center gap-1">
+                      <Clock size={10} />
+                      {format(new Date(meeting.date), 'yyyy.MM.dd')} {meeting.startTime}
+                    </span>
+                    <span className="text-xs font-bold text-slate-700 truncate">
+                      {meeting.department}
+                    </span>
+                    <span className="text-[10px] text-slate-500 truncate">
+                      {meeting.content}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => onEdit(meeting)}
+                      className="p-2 bg-white border border-slate-200 hover:bg-sky-100 hover:border-sky-200 text-slate-400 hover:text-medical-primary rounded-xl transition-all"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button 
+                      onClick={() => setDeletingId(meeting.id)}
+                      className="p-2 bg-rose-50 border border-rose-100 hover:bg-rose-500 text-rose-400 hover:text-white rounded-xl transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}

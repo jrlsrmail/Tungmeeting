@@ -283,12 +283,12 @@ export default function MeetingForm({
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600">自定義內容</label>
+            <label className="text-xs font-semibold text-slate-600">自行輸入</label>
             <input
               type="text"
               value={customContent}
               onChange={(e) => setCustomContent(e.target.value)}
-              placeholder="請輸入會議內容"
+              placeholder="請輸入會議內容..."
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all"
             />
           </div>

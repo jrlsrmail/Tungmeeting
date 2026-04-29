@@ -50,6 +50,10 @@ export default function App() {
     setEditingMeeting(null);
   };
 
+  const handleMoveMeeting = (id: string, newDate: Date) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, date: newDate } : m));
+  };
+
   return (
     <div className="flex h-screen bg-medical-bg overflow-hidden font-sans">
       {/* Side Rail - Desktop */}
@@ -125,6 +129,7 @@ export default function App() {
                     meetings={meetings} 
                     onEditMeeting={setEditingMeeting}
                     onDeleteMeeting={handleDeleteMeeting}
+                    onMoveMeeting={handleMoveMeeting}
                   />
                 </motion.div>
 
@@ -138,6 +143,7 @@ export default function App() {
                     meetings={meetings}
                     onEdit={setEditingMeeting}
                     onDelete={handleDeleteMeeting}
+                    onDeleteSeries={handleDeleteAllInGroup}
                   />
                 </motion.div>
               </div>

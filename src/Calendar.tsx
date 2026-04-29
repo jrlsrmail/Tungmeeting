@@ -21,10 +21,12 @@ interface CalendarProps {
   meetings: Meeting[];
   onEditMeeting: (meeting: Meeting) => void;
   onDeleteMeeting: (id: string) => void;
+  onMoveMeeting: (id: string, newDate: Date) => void;
 }
 
-export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting }: CalendarProps) {
+export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onMoveMeeting }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [draggedMeetingId, setDraggedMeetingId] = useState<string | null>(null);
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -44,16 +46,62 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting }: C
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
+  const handleDragStart = (id: string) => {
+    setDraggedMeetingId(id);
+  };
+
+  const handleDrop = (day: Date) => {
+    if (draggedMeetingId) {
+      onMoveMeeting(draggedMeetingId, day);
+      setDraggedMeetingId(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newYear = parseInt(e.target.value);
+    const newDate = new Date(currentMonth);
+    newDate.setFullYear(newYear);
+    setCurrentMonth(newDate);
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMonth = parseInt(e.target.value);
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newMonth);
+    setCurrentMonth(newDate);
+  };
+
   return (
     <div className="dashboard-card overflow-hidden flex flex-col h-full bg-white border border-slate-50 min-h-[500px]">
       <div className="accent-line !bg-slate-200"></div>
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">
-            {format(currentMonth, 'yyyy年 MMMM', { locale: undefined })}
-          </h2>
-          <p className="text-[10px] text-slate-400 font-medium">會議排程預覽</p>
+          <div className="flex items-center gap-2">
+            <select 
+              value={currentMonth.getFullYear()} 
+              onChange={handleYearChange}
+              className="text-lg font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors"
+            >
+              {[2026, 2027, 2028, 2029, 2030].map(year => (
+                <option key={year} value={year}>{year}年</option>
+              ))}
+            </select>
+            <select 
+              value={currentMonth.getMonth()} 
+              onChange={handleMonthChange}
+              className="text-lg font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors"
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i} value={i}>{i + 1}月</option>
+              ))}
+            </select>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium tracking-wider">MEDICAL MEETING SCHEDULE</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -64,7 +112,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting }: C
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-4 py-1.5 text-xs font-bold border border-sky-100 bg-sky-50 text-medical-primary hover:bg-sky-100 rounded-xl transition-all"
+            className="px-4 py-1.5 text-xs font-bold border border-sky-100 bg-sky-50 text-medical-primary hover:bg-sky-100 rounded-xl transition-all shadow-sm"
           >
             今天
           </button>
@@ -95,9 +143,12 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting }: C
           return (
             <div
               key={day.toString()}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(day)}
               className={cn(
                 "min-h-[100px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group",
                 !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-white hover:bg-slate-50/30",
+                draggedMeetingId && isCurrentMonth && "bg-sky-50/50",
                 idx % 7 === 6 && "border-r-0"
               )}
             >
@@ -111,15 +162,26 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting }: C
               </div>
               
               <div className="space-y-1 mt-2 overflow-y-auto max-h-[80px] scrollbar-hide">
-                {dayMeetings.map((meeting) => (
-                  <div
-                    key={meeting.id}
-                    onClick={() => onEditMeeting(meeting)}
-                    className="cursor-pointer p-1.5 rounded-lg bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary text-[9px] leading-tight font-bold transition-all truncate border border-medical-primary/10"
-                  >
-                    {meeting.content}
-                  </div>
-                ))}
+                {dayMeetings.map((meeting) => {
+                  const isHighlight = meeting.content === '口醫部科會' || meeting.content === '教學行政會議';
+                  return (
+                    <div
+                      key={meeting.id}
+                      draggable
+                      onDragStart={() => handleDragStart(meeting.id)}
+                      onClick={() => onEditMeeting(meeting)}
+                      className={cn(
+                        "cursor-move p-1.5 rounded-lg text-[9px] leading-tight font-bold transition-all truncate border",
+                        isHighlight 
+                          ? "bg-rose-50 border-rose-200 text-rose-600 shadow-sm animate-pulse" 
+                          : "bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary border-medical-primary/10",
+                        draggedMeetingId === meeting.id && "opacity-50"
+                      )}
+                    >
+                      {meeting.content}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
