@@ -38,7 +38,7 @@ export enum Frequency {
   ONCE_EVERY_TWO_MONTHS = "每兩個月一次",
   ONCE_A_QUARTER = "每季一次",
   WEEKLY = "每週一次",
-  MONTHLY_NTH_DAY = "每月第幾個周幾",
+  MONTHLY_NTH_DAY = "每月固定時間",
   EVERY_YEAR = "每年一次",
   SPECIFIC = "直接輸入時間"
 }

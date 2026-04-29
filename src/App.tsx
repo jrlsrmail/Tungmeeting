@@ -177,9 +177,9 @@ export default function App() {
   return (
     <div className="flex h-screen bg-medical-bg overflow-hidden font-sans">
       {/* Side Rail - Desktop */}
-      <aside className="hidden lg:flex w-56 flex-col bg-white border-r border-slate-100 p-4 shrink-0 transition-all">
+      <aside className="hidden lg:flex w-56 flex-col bg-medical-surface border-r border-medical-border p-4 shrink-0 transition-all">
         <div className="flex items-center gap-3 px-1 mb-10 mt-2">
-          <div className="w-9 h-9 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-sky-100 shrink-0">
+          <div className="w-9 h-9 bg-medical-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-amber-100 shrink-0">
             <Hospital size={20} />
           </div>
           <div className="min-w-0">
@@ -216,7 +216,7 @@ export default function App() {
             }}
             className={cn(
               "side-rail-btn transition-all duration-300", 
-              showForm && "bg-sky-500 text-white hover:bg-sky-600 hover:text-white shadow-lg shadow-sky-100"
+              showForm && "bg-amber-500 text-white hover:bg-amber-600 hover:text-white shadow-lg shadow-amber-100"
             )}
           >
             <Plus size={18} /> 新增會議
@@ -230,7 +230,7 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="mt-auto p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
+        <div className="mt-auto p-3 bg-amber-100/50 rounded-2xl border border-amber-100 mb-4">
           <p className="text-[9px] text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
           <p className="text-xs font-bold text-slate-700">{meetings.length} 場會議</p>
         </div>
@@ -239,7 +239,7 @@ export default function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 shrink-0">
+        <header className="lg:hidden flex items-center justify-between p-4 bg-medical-surface border-b border-medical-border shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-medical-primary rounded-lg flex items-center justify-center text-white">
               <Hospital size={16} />
@@ -248,7 +248,7 @@ export default function App() {
           </div>
           <button 
             onClick={() => setShowForm(!showForm)}
-            className="p-2 bg-sky-500 text-white rounded-lg"
+            className="p-2 bg-amber-500 text-white rounded-lg"
           >
             <Plus size={18} />
           </button>

@@ -64,8 +64,8 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
   };
 
   return (
-    <div className="dashboard-card overflow-hidden flex flex-col h-full bg-white border border-slate-50 min-h-[500px]">
-      <div className="accent-line !bg-slate-200"></div>
+    <div className="dashboard-card overflow-hidden flex flex-col h-full bg-medical-surface border border-medical-border min-h-[500px]">
+      <div className="accent-line !bg-amber-200"></div>
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
@@ -100,7 +100,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
           </button>
           <button
             onClick={() => setCurrentMonth(new Date())}
-            className="px-4 py-1.5 text-xs font-bold border border-sky-100 bg-sky-50 text-medical-primary hover:bg-sky-100 rounded-xl transition-all shadow-sm"
+            className="px-4 py-1.5 text-xs font-bold border border-amber-100 bg-amber-50 text-medical-primary hover:bg-amber-100 rounded-xl transition-all shadow-sm"
           >
             今天
           </button>
@@ -135,8 +135,8 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
               onDrop={() => handleDrop(day)}
               className={cn(
                 "min-h-[120px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group",
-                !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-white hover:bg-slate-50/30",
-                draggedMeetingId && isCurrentMonth && "bg-sky-50/50",
+                !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-medical-surface hover:bg-amber-50/50",
+                draggedMeetingId && isCurrentMonth && "bg-amber-50/50",
                 idx % 7 === 6 && "border-r-0"
               )}
             >
@@ -144,7 +144,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
                 <span
                   className={cn(
                     "text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-lg transition-colors",
-                    isToday ? "bg-medical-primary text-white shadow-md shadow-sky-100" : "text-slate-500",
+                    isToday ? "bg-medical-primary text-white shadow-md shadow-amber-100" : "text-slate-500",
                     !isCurrentMonth && "opacity-20"
                   )}
                 >

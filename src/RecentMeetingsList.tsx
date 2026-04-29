@@ -46,7 +46,7 @@ export default function RecentMeetingsList({
           upcomingMeetings.map((meeting) => (
             <div
               key={meeting.id}
-              className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col gap-3 group transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200"
+              className="p-4 bg-amber-100/30 border border-amber-100 rounded-2xl flex flex-col gap-3 group transition-all hover:bg-amber-100/50 hover:shadow-lg hover:shadow-amber-200/50 hover:border-amber-200"
             >
               {deletingId === meeting.id ? (
                 <div className="flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-200">
@@ -84,7 +84,7 @@ export default function RecentMeetingsList({
                   <div className="flex justify-between items-start">
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-sky-500 text-white text-[9px] font-bold rounded-full uppercase">
+                        <span className="px-2 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full uppercase">
                           {format(new Date(meeting.date), 'yyyy.MM.dd')}
                         </span>
                         <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-bold rounded-full">
@@ -100,7 +100,7 @@ export default function RecentMeetingsList({
                     <div className="flex gap-1">
                       <button 
                         onClick={() => onEdit(meeting)}
-                        className="p-1.5 bg-white border border-slate-200 hover:bg-sky-100 hover:border-sky-200 text-slate-400 hover:text-medical-primary rounded-lg transition-all"
+                        className="p-1.5 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-200 text-slate-400 hover:text-medical-primary rounded-lg transition-all"
                       >
                         <Edit2 size={12} />
                       </button>

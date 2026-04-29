@@ -5,11 +5,11 @@
   --font-sans: "Inter", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-medical-primary: #0284c7;
-  --color-medical-secondary: #0ea5e9;
-  --color-medical-bg: #f8fafc;
-  --color-medical-surface: #ffffff;
-  --color-medical-border: #e2e8f0;
+  --color-medical-primary: #d97706; /* Amber 600 */
+  --color-medical-secondary: #f59e0b; /* Amber 500 */
+  --color-medical-bg: #fffbeb; /* Amber 50 */
+  --color-medical-surface: #fffcf2; /* Very light warm cream */
+  --color-medical-border: #fef3c7; /* Amber 100 */
 }
 
 body {
@@ -18,19 +18,19 @@ body {
 
 @layer components {
   .dashboard-card {
-    @apply bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] relative transition-all;
+    @apply bg-medical-surface border border-medical-border rounded-[2rem] p-6 shadow-xl shadow-amber-900/5 relative transition-all;
   }
   
   .side-rail-btn {
-    @apply p-2 rounded-xl text-slate-400 hover:text-medical-primary hover:bg-sky-50 transition-all flex items-center gap-3 w-full text-sm font-medium;
+    @apply p-2 rounded-xl text-slate-500 hover:text-medical-primary hover:bg-amber-100 transition-all flex items-center gap-3 w-full text-sm font-bold;
   }
   
   .side-rail-btn.active {
-    @apply bg-sky-100 text-medical-primary;
+    @apply bg-amber-200 text-amber-900 shadow-sm;
   }
 
   .btn-medical {
-    @apply bg-medical-primary hover:bg-medical-secondary text-white font-semibold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-200 active:scale-95 flex items-center justify-center gap-2;
+    @apply bg-medical-primary hover:bg-medical-secondary text-white font-black px-6 py-2.5 rounded-2xl transition-all shadow-lg shadow-amber-200 active:scale-95 flex items-center justify-center gap-2;
   }
 }
 

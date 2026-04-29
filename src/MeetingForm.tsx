@@ -81,7 +81,7 @@ export default function MeetingForm({
           <select 
             value={h} 
             onChange={(e) => onChange('h', e.target.value)}
-            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
           >
             {Array.from({ length: 24 }).map((_, i) => (
               <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
@@ -90,7 +90,7 @@ export default function MeetingForm({
           <select 
             value={m} 
             onChange={(e) => onChange('m', e.target.value)}
-            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+            className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
           >
             {['00', '10', '20', '30', '40', '50'].map(val => (
               <option key={val} value={val}>{val}</option>
@@ -374,7 +374,7 @@ export default function MeetingForm({
                 setContent('其他');
               }
             }}
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all appearance-none"
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all appearance-none"
           >
             {Object.values(Department).map(dept => (
               <option key={dept} value={dept}>{dept}</option>
@@ -394,7 +394,7 @@ export default function MeetingForm({
                   className={cn(
                     "p-2 text-[11px] border rounded-xl cursor-pointer transition-all text-center flex items-center justify-center min-h-[40px]",
                     content === c 
-                      ? "bg-sky-50 border-medical-border text-medical-primary font-bold shadow-inner" 
+                      ? "bg-amber-50 border-medical-border text-medical-primary font-bold shadow-inner" 
                       : "border-slate-50 hover:bg-slate-50 text-slate-500"
                   )}
                 >
@@ -408,13 +408,13 @@ export default function MeetingForm({
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 font-bold text-sky-600">自行輸入內容</label>
+            <label className="text-xs font-semibold text-slate-600 font-bold text-amber-600">自行輸入內容</label>
             <input
               type="text"
               value={customContent}
               onChange={(e) => setCustomContent(e.target.value)}
               placeholder="請輸入會議內容..."
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all"
             />
           </div>
         )}
@@ -429,7 +429,7 @@ export default function MeetingForm({
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="請輸入課程主題..."
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all"
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all"
           />
         </div>
 
@@ -442,7 +442,7 @@ export default function MeetingForm({
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-bold text-slate-700"
+              className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
             >
               {(settings.locations || []).concat('其他').map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
@@ -454,7 +454,7 @@ export default function MeetingForm({
                 value={customLocation}
                 onChange={(e) => setCustomLocation(e.target.value)}
                 placeholder="請輸入地點..."
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-bold text-slate-700"
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
               />
             )}
           </div>
@@ -462,7 +462,7 @@ export default function MeetingForm({
 
         {/* Advisors Selection */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1 text-sky-700">
+          <label className="text-xs font-semibold text-slate-600 flex items-center gap-1 text-amber-700">
             <Users size={12} /> 指導醫師 (選填, 可複選)
           </label>
           <div className="grid grid-cols-3 gap-1.5">
@@ -474,8 +474,8 @@ export default function MeetingForm({
                 className={cn(
                   "p-1.5 text-[10px] border rounded-lg transition-all",
                   advisors.includes(name)
-                    ? "bg-sky-500 text-white border-sky-500 font-bold"
-                    : "bg-white border-slate-100 text-slate-500 hover:border-sky-200"
+                    ? "bg-amber-600 text-white border-amber-600 font-bold"
+                    : "bg-amber-50 border-amber-100 text-amber-700 hover:border-amber-200"
                 )}
               >
                 {name}
@@ -488,7 +488,7 @@ export default function MeetingForm({
               value={customAdvisor}
               onChange={(e) => setCustomAdvisor(e.target.value)}
               placeholder="請輸入姓名"
-              className="w-full p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] outline-none focus:border-sky-500"
+              className="w-full p-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] outline-none focus:border-amber-500"
             />
           </div>
         </div>
@@ -503,7 +503,7 @@ export default function MeetingForm({
               <select
                 value={presenter}
                 onChange={(e) => setPresenter(e.target.value)}
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-sky-500"
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
               >
                 <option value="">請選擇報告者</option>
                 {(settings.participants || []).concat('其他').map(p => (
@@ -516,7 +516,7 @@ export default function MeetingForm({
                   value={customPresenter}
                   onChange={(e) => setCustomPresenter(e.target.value)}
                   placeholder="輸入姓名"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
                 />
               )}
             </div>
@@ -529,7 +529,7 @@ export default function MeetingForm({
               <select
                 value={recorder}
                 onChange={(e) => setRecorder(e.target.value)}
-                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-sky-500"
+                className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-amber-500"
               >
                 <option value="">請選擇紀錄者</option>
                 {(settings.participants || []).concat('其他').map(p => (
@@ -542,7 +542,7 @@ export default function MeetingForm({
                   value={customRecorder}
                   onChange={(e) => setCustomRecorder(e.target.value)}
                   placeholder="輸入姓名"
-                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500"
+                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500"
                 />
               )}
             </div>
@@ -559,7 +559,7 @@ export default function MeetingForm({
             onChange={(e) => setRemarks(e.target.value)}
             placeholder="請輸入備註內容..."
             rows={2}
-            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all resize-none"
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all resize-none"
           />
         </div>
 
@@ -577,7 +577,7 @@ export default function MeetingForm({
                   className={cn(
                     "p-2 text-[10px] border rounded-xl transition-all font-medium",
                     frequency === f 
-                      ? "bg-sky-500 border-sky-600 text-white font-bold shadow-md" 
+                      ? "bg-amber-500 border-amber-600 text-white font-bold shadow-md" 
                       : "border-slate-100 hover:bg-slate-50 text-slate-500"
                   )}
                 >
@@ -588,35 +588,36 @@ export default function MeetingForm({
 
             {/* Recurring Options */}
             {frequency !== Frequency.SPECIFIC && (
-              <div className="pt-2 animate-in fade-in slide-in-from-top-1 space-y-3 p-3 bg-sky-50/50 rounded-xl border border-sky-100">
+              <div className="pt-2 animate-in fade-in slide-in-from-top-1 space-y-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100">
                 <div className="flex gap-4">
                   {frequency === Frequency.MONTHLY_NTH_DAY && (
                     <div className="flex-1 space-y-1.5">
-                      <label className="text-[10px] font-bold text-sky-700 block">第幾個週幾</label>
+                      <label className="text-[10px] font-bold text-amber-700 block">每月第幾週</label>
                       <select 
                         value={nthWeek}
                         onChange={(e) => setNthWeek(Number(e.target.value))}
-                        className="w-full p-1.5 bg-white border border-sky-100 rounded-lg text-[10px] text-sky-600 font-bold"
+                        className="w-full p-1.5 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-600 font-bold"
                       >
                         {[1, 2, 3, 4, 5].map(v => (
-                          <option key={v} value={v}>第 {v} 個</option>
+                          <option key={v} value={v}>第 {v} 週</option>
                         ))}
                       </select>
                     </div>
                   )}
                   <div className="flex-1 space-y-1.5">
-                    <label className="text-[10px] font-bold text-sky-700 block uppercase tracking-wider">星期幾</label>
+                    <label className="text-[10px] font-bold text-amber-700 block uppercase tracking-wider">星期</label>
                     <div className="flex flex-wrap gap-1">
-                      {DAYS_OF_WEEK.map(day => (
+                      {DAYS_OF_WEEK.filter(d => d.value !== 0).map(day => (
                         <button
                           key={day.value}
                           type="button"
                           onClick={() => setSelectedDay(day.value)}
                           className={cn(
                             "flex-1 min-w-[28px] py-1 text-[10px] rounded-lg border transition-all",
+                            day.value === 2 && "flex-[1.5] scale-110 shadow-inner border-amber-400", // Tuesday is larger
                             selectedDay === day.value
-                              ? "bg-sky-500 text-white border-sky-500 shadow-sm font-bold"
-                              : "bg-white border-slate-200 text-slate-500 hover:border-sky-200"
+                              ? "bg-amber-500 text-white border-amber-500 shadow-sm font-bold"
+                              : "bg-amber-50 border-amber-100 text-slate-500 hover:border-amber-200"
                           )}
                         >
                           {day.label.replace('週', '')}
@@ -637,7 +638,7 @@ export default function MeetingForm({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-sky-500 transition-all font-mono"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-amber-500 transition-all font-mono"
             />
           </div>
           <div className="flex gap-4">
