@@ -1,0 +1,6 @@
+{
+  "name": "醫院教學會議排程系統",
+  "description": "專業的醫院教學會議排程工具，支援科別分類、自動頻率排程與行事曆視覺化管理。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
