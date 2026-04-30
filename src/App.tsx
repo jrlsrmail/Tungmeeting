@@ -18,6 +18,16 @@ import RecentMeetingsList from './RecentMeetingsList';
 import { Meeting, AppSettings } from './types';
 import { cn } from './lib/utils';
 import { format } from 'date-fns';
+import { 
+  subscribeMeetings, 
+  saveMeetings, 
+  updateMeeting, 
+  deleteMeeting, 
+  deleteSeries, 
+  getSettings, 
+  saveSettings 
+} from './lib/firebaseUtils';
+import { Download } from 'lucide-react';
 
 const DEFAULT_ADVISORS = ["陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"];
 const DEFAULT_LOCATIONS = ["口醫部會議室", "遠距會議", "臨床示範室"];
@@ -90,38 +100,88 @@ function useHistory<T>(storageKey: string, initialState: T) {
 }
 
 export default function App() {
-  const { 
-    state: meetings, 
-    set: setMeetings, 
-    undo, 
-    redo, 
-    canUndo, 
-    canRedo 
-  } = useHistory<Meeting[]>('hospital_meetings_v4', []);
-  
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('hospital_settings_v4');
-    const defaults = { 
-      advisors: DEFAULT_ADVISORS, 
-      locations: DEFAULT_LOCATIONS, 
-      participants: DEFAULT_PARTICIPANTS 
-    };
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return { ...defaults, ...parsed };
-      } catch (e) {
-        return defaults;
-      }
-    }
-    return defaults;
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [settings, setSettings] = useState<AppSettings>({ 
+    advisors: DEFAULT_ADVISORS, 
+    locations: DEFAULT_LOCATIONS, 
+    participants: DEFAULT_PARTICIPANTS 
   });
+
+  const handleExportCSV = () => {
+    if (meetings.length === 0) {
+      alert('目前沒有會議資料可供匯出');
+      return;
+    }
+
+    const sortedMeetings = [...meetings].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const headers = ['日期', '時間', '科別', '子項目', '主題', '地點', '指導醫師', '報告者', '紀錄者', '備註'];
+    const rows = sortedMeetings.map(m => [
+      format(m.date, 'yyyy-MM-dd'),
+      `${m.startTime} - ${m.endTime}`,
+      m.department,
+      m.content,
+      m.topic || '',
+      m.location || '',
+      (m.advisors || []).join('、'),
+      m.presenter || '',
+      m.recorder || '',
+      (m.remarks || '').replace(/\n/g, ' ')
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `口醫部會議紀錄_${format(new Date(), 'yyyyMMdd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [preselectedDate, setPreselectedDate] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'calendar' | 'settings'>('calendar');
   const [priorityView, setPriorityView] = useState<'calendar' | 'recent'>('calendar');
+
+  // Password protection state
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('tung_auth') === 'true';
+  });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const checkAuth = (action: () => void) => {
+    if (isAuthenticated) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setShowPasswordDialog(true);
+    }
+  };
+
+  const handleVerifyPassword = () => {
+    if (passwordInput === '11305') {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('tung_auth', 'true');
+      setShowPasswordDialog(false);
+      setPasswordInput('');
+      setPasswordError(false);
+      if (pendingAction) {
+        pendingAction();
+        setPendingAction(null);
+      }
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   const goHome = () => {
     setActiveView('calendar');
@@ -132,63 +192,70 @@ export default function App() {
   };
 
   const handleDateClick = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    setPreselectedDate(dateStr);
-    setEditingMeeting(null);
-    setShowForm(true);
+    checkAuth(() => {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      setPreselectedDate(dateStr);
+      setEditingMeeting(null);
+      setShowForm(true);
+    });
   };
 
   useEffect(() => {
-    localStorage.setItem('hospital_settings_v4', JSON.stringify(settings));
-  }, [settings]);
+    const unsubscribe = subscribeMeetings((newMeetings) => {
+      setMeetings(newMeetings);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  // Keyboard shortcuts for Undo/Redo
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey)) {
-        if (e.key === 'z' || e.key === 'Z') {
-          if (e.shiftKey) {
-            redo();
-          } else {
-            undo();
-          }
-        } else if (e.key === 'y' || e.key === 'Y') {
-          redo();
-        }
+    const fetchSettings = async () => {
+      const savedSettings = await getSettings();
+      if (savedSettings) {
+        setSettings(savedSettings);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+    fetchSettings();
+  }, []);
 
-  const handleAddMeetings = (newMeetings: Meeting[]) => {
-    setMeetings(prev => [...prev, ...newMeetings]);
+  const handleAddMeetings = async (newMeetings: Meeting[]) => {
+    await saveMeetings(newMeetings);
     setShowForm(false);
   };
 
-  const handleUpdateMeeting = (updatedMeeting: Meeting) => {
-    setMeetings(prev => prev.map(m => m.id === updatedMeeting.id ? updatedMeeting : m));
+  const handleUpdateMeeting = async (updatedMeeting: Meeting) => {
+    await updateMeeting(updatedMeeting);
     setEditingMeeting(null);
     setShowForm(false);
   };
 
-  const handleDeleteMeeting = (id: string) => {
-    setMeetings(prev => prev.filter(m => m.id !== id));
+  const handleDeleteMeeting = async (id: string) => {
+    await deleteMeeting(id);
     setEditingMeeting(null);
   };
 
-  const handleDeleteAllInGroup = (groupId: string) => {
-    setMeetings(prev => prev.filter(m => m.groupId !== groupId));
+  const handleDeleteAllInGroup = async (groupId: string) => {
+    await deleteSeries(groupId);
     setEditingMeeting(null);
   };
 
-  const handleMoveMeeting = (id: string, newDate: Date) => {
-    setMeetings(prev => prev.map(m => m.id === id ? { ...m, date: newDate } : m));
+  const handleMoveMeeting = async (id: string, newDate: Date) => {
+    const meeting = meetings.find(m => m.id === id);
+    if (meeting) {
+      await updateMeeting({ ...meeting, date: newDate });
+    }
   };
 
   const handleEditRequest = (meeting: Meeting) => {
-    setEditingMeeting(meeting);
-    setShowForm(true);
+    checkAuth(() => {
+      setEditingMeeting(meeting);
+      setShowForm(true);
+    });
+  };
+
+  const handleSaveSettings = async (newSettings: AppSettings) => {
+    setSettings(newSettings);
+    await saveSettings(newSettings);
+    setActiveView('calendar');
   };
 
   return (
@@ -231,9 +298,11 @@ export default function App() {
           
           <button 
             onClick={() => {
-              setEditingMeeting(null);
-              setPreselectedDate(null);
-              setShowForm(!showForm);
+              checkAuth(() => {
+                setEditingMeeting(null);
+                setPreselectedDate(null);
+                setShowForm(!showForm);
+              });
             }}
             className={cn(
               "side-rail-btn py-3 transition-all duration-300 text-base", 
@@ -251,9 +320,17 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="mt-auto p-4 bg-amber-100/50 rounded-2xl border border-amber-100 mb-4">
-          <p className="text-xs text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
-          <p className="text-sm font-bold text-slate-700">{meetings.length} 場會議</p>
+        <div className="mt-auto space-y-2">
+          <div className="p-4 bg-amber-100/50 rounded-2xl border border-amber-100">
+            <p className="text-xs text-slate-500 font-bold mb-1 uppercase tracking-wider">系統狀態</p>
+            <p className="text-sm font-bold text-slate-700 mb-3">{meetings.length} 場會議</p>
+            <button 
+              onClick={handleExportCSV}
+              className="w-full py-2.5 bg-white hover:bg-slate-50 text-amber-700 text-xs font-bold rounded-xl border border-amber-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Download size={14} /> 匯出會議記錄 (CSV)
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -268,7 +345,7 @@ export default function App() {
             <h1 className="text-sm font-bold">口醫部會議排程</h1>
           </div>
           <button 
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => checkAuth(() => setShowForm(!showForm))}
             className="p-2 bg-amber-500 text-white rounded-lg"
           >
             <Plus size={18} />
@@ -431,7 +508,7 @@ export default function App() {
 
                       <div className="pt-4 flex justify-end">
                         <button 
-                          onClick={() => setActiveView('calendar')}
+                          onClick={() => handleSaveSettings(settings)}
                           className="btn-medical px-8"
                         >
                           儲存並返回
@@ -442,13 +519,13 @@ export default function App() {
                 )}
               </div>
             </div>
-          </div>
-        </main>
+        </div>
+      </main>
       </div>
 
       {/* Mobile Overlay for Editing */}
       <AnimatePresence>
-        {(editingMeeting || (showForm && window.innerWidth < 1024)) && (
+        {(editingMeeting || (showForm && typeof window !== 'undefined' && window.innerWidth < 1024)) && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -478,6 +555,79 @@ export default function App() {
                   setShowForm(false);
                 }}
               />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Password Dialog */}
+      <AnimatePresence>
+        {showPasswordDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-100"
+            >
+              <div className="flex flex-col items-center text-center space-y-6">
+                <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center text-medical-primary shadow-inner">
+                  <Hospital size={40} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-slate-800">安全驗證</h3>
+                  <p className="text-slate-500 font-bold px-4">操作權限已受限，請輸入系統密碼以繼續。</p>
+                </div>
+                
+                <div className="w-full space-y-4">
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={passwordInput}
+                      onChange={(e) => {
+                        setPasswordInput(e.target.value);
+                        setPasswordError(false);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleVerifyPassword()}
+                      placeholder="請輸入密碼"
+                      autoFocus
+                      className={cn(
+                        "w-full px-6 py-4 bg-slate-50 border-2 rounded-2xl text-center text-xl font-black tracking-[0.5em] transition-all focus:outline-none focus:ring-4 focus:ring-medical-primary/10",
+                        passwordError ? "border-rose-400 shake" : "border-slate-100 focus:border-medical-primary"
+                      )}
+                    />
+                    {passwordError && (
+                      <p className="text-rose-500 text-xs font-bold mt-2 animate-pulse">密碼錯誤，請重新輸入</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setShowPasswordDialog(false);
+                        setPasswordInput('');
+                        setPasswordError(false);
+                        setPendingAction(null);
+                      }}
+                      className="flex-1 py-4 px-6 text-slate-400 font-bold hover:text-slate-600 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleVerifyPassword}
+                      className="flex-[2] py-4 px-6 bg-medical-primary text-white font-black rounded-2xl shadow-lg shadow-amber-200 hover:bg-amber-500 active:scale-95 transition-all"
+                    >
+                      確認驗證
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">童綜合口醫部會議系統</p>
+              </div>
             </motion.div>
           </motion.div>
         )}
