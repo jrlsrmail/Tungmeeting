@@ -168,7 +168,7 @@ export default function App() {
   };
 
   const handleVerifyPassword = () => {
-    if (passwordInput === '11305') {
+    if (passwordInput === '12345') {
       setIsAuthenticated(true);
       sessionStorage.setItem('tung_auth', 'true');
       setShowPasswordDialog(false);
@@ -192,12 +192,10 @@ export default function App() {
   };
 
   const handleDateClick = (date: Date) => {
-    checkAuth(() => {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      setPreselectedDate(dateStr);
-      setEditingMeeting(null);
-      setShowForm(true);
-    });
+    // Collapse the form when clicking the calendar
+    setShowForm(false);
+    setEditingMeeting(null);
+    setPreselectedDate(null);
   };
 
   useEffect(() => {
@@ -229,13 +227,17 @@ export default function App() {
   };
 
   const handleDeleteMeeting = async (id: string) => {
-    await deleteMeeting(id);
-    setEditingMeeting(null);
+    checkAuth(async () => {
+      await deleteMeeting(id);
+      setEditingMeeting(null);
+    });
   };
 
   const handleDeleteAllInGroup = async (groupId: string) => {
-    await deleteSeries(groupId);
-    setEditingMeeting(null);
+    checkAuth(async () => {
+      await deleteSeries(groupId);
+      setEditingMeeting(null);
+    });
   };
 
   const handleMoveMeeting = async (id: string, newDate: Date) => {
