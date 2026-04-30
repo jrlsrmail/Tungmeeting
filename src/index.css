@@ -47,6 +47,39 @@ body {
   border-color: #f1f5f9 !important;
 }
 
+/* Maximize font sizes for export */
+.is-exporting div[draggable] {
+  padding: 12px !important;
+  border-width: 3px !important;
+}
+
+.is-exporting div[draggable] .text-\[10px\] {
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+}
+
+.is-exporting div[draggable] .text-xs {
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
+}
+
+.is-exporting div[draggable] .text-\[9px\] {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.is-exporting div[draggable] .italic.text-\[9px\] {
+  font-size: 15px !important;
+  padding: 4px 6px !important;
+  margin-bottom: 8px !important;
+}
+
+.is-exporting .grid-cols-7 > div {
+  min-height: 200px !important;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

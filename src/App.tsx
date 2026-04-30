@@ -104,6 +104,7 @@ function useHistory<T>(storageKey: string, initialState: T) {
 
 export default function App() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [settings, setSettings] = useState<AppSettings>({ 
     advisors: DEFAULT_ADVISORS, 
     locations: DEFAULT_LOCATIONS, 
@@ -205,7 +206,7 @@ export default function App() {
         const y = (pageHeight - finalHeight) / 2;
         
         pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-        pdf.save(`口腔醫學部教學活動表_${format(new Date(), 'yyyyMM')}.pdf`);
+        pdf.save(`口腔醫學部教學活動表_${format(currentMonth, 'yyyyMM')}.pdf`);
       };
     } catch (error) {
       console.error('PDF export failed:', error);
@@ -475,6 +476,8 @@ export default function App() {
                         >
                           <Calendar 
                             meetings={meetings} 
+                            currentMonth={currentMonth}
+                            onMonthChange={setCurrentMonth}
                             onEditMeeting={handleEditRequest}
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}
@@ -519,6 +522,8 @@ export default function App() {
                         >
                           <Calendar 
                             meetings={meetings} 
+                            currentMonth={currentMonth}
+                            onMonthChange={setCurrentMonth}
                             onEditMeeting={handleEditRequest}
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}

@@ -6,18 +6,27 @@ import { cn } from './lib/utils';
 
 interface CalendarProps {
   meetings: Meeting[];
+  currentMonth: Date;
+  onMonthChange: (date: Date) => void;
   onEditMeeting: (meeting: Meeting) => void;
   onDeleteMeeting: (id: string) => void;
   onMoveMeeting: (id: string, newDate: Date) => void;
   onDateClick: (date: Date) => void;
 }
 
-export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onMoveMeeting, onDateClick }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+export default function Calendar({ 
+  meetings, 
+  currentMonth,
+  onMonthChange,
+  onEditMeeting, 
+  onDeleteMeeting, 
+  onMoveMeeting, 
+  onDateClick 
+}: CalendarProps) {
   const [draggedMeetingId, setDraggedMeetingId] = useState<string | null>(null);
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const nextMonth = () => onMonthChange(addMonths(currentMonth, 1));
+  const prevMonth = () => onMonthChange(subMonths(currentMonth, 1));
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -54,14 +63,14 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
     const newYear = parseInt(e.target.value);
     const newDate = new Date(currentMonth);
     newDate.setFullYear(newYear);
-    setCurrentMonth(newDate);
+    onMonthChange(newDate);
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newMonth = parseInt(e.target.value);
     const newDate = new Date(currentMonth);
     newDate.setMonth(newMonth);
-    setCurrentMonth(newDate);
+    onMonthChange(newDate);
   };
 
   return (
@@ -102,7 +111,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
             <ChevronLeft size={20} />
           </button>
           <button
-            onClick={() => setCurrentMonth(new Date())}
+            onClick={() => onMonthChange(new Date())}
             className="px-4 py-1.5 text-xs font-bold border border-amber-100 bg-amber-50 text-medical-primary hover:bg-amber-100 rounded-xl transition-all shadow-sm"
           >
             今天
@@ -147,8 +156,10 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
               <div className="flex justify-between items-start mb-1">
                 <span
                   className={cn(
-                    "text-base font-bold w-9 h-9 flex items-center justify-center rounded-lg transition-colors",
-                    isToday ? "bg-medical-primary text-white shadow-md shadow-amber-100" : "text-slate-500",
+                    "text-base w-9 h-9 flex items-center justify-center rounded-lg transition-all",
+                    isToday 
+                      ? "bg-medical-primary text-white shadow-md shadow-amber-200 font-black scale-125 ring-2 ring-amber-100" 
+                      : "text-slate-500 font-bold",
                     !isCurrentMonth && "opacity-20"
                   )}
                 >
