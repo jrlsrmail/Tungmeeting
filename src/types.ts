@@ -17,7 +17,7 @@ export enum Department {
 
 export const DEPARTMENT_CONTENTS: Record<string, string[]> = {
   [Department.ADMIN]: ["口醫部科會", "教學行政會議", "親善之家會議", "其他"],
-  [Department.CROSS_DEPT]: ["跨科病例討論會", "頭頸癌團隊tumor board會議", "病歷寫作", "廠商課程", "其他"],
+  [Department.CROSS_DEPT]: ["跨科病例討論會", "頭頸癌團隊tumor board會議", "病歷寫作", "廠商課程", "外賓演講", "其他"],
   [Department.GRAND_ROUND]: ["全人醫療", "病人安全", "醫療品質", "醫病溝通", "醫學倫理", "醫事法規", "感染管制", "實證醫學", "病歷寫作", "新知專題", "其他"],
   [Department.CHILD]: ["核心課程", "journal reading", "book reading", "case report", "video case", "其他"],
   [Department.RESTORATIVE]: ["核心課程", "journal reading", "book reading", "case report", "video case", "其他"],

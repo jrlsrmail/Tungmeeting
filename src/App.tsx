@@ -29,8 +29,8 @@ import {
 } from './lib/firebaseUtils';
 import { Download } from 'lucide-react';
 
-const DEFAULT_ADVISORS = ["陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "鍾清貞", "陳堯睿", "陳昶安", "陳嘉宏", "黃兆民", "林暉育", "李昕錞", "畢祐瑄"];
-const DEFAULT_LOCATIONS = ["口醫部會議室", "遠距會議", "臨床示範室"];
+const DEFAULT_ADVISORS = ["陳雅怡", "蕭應良", "林佳蓉", "葉宜霖", "陳瑋玲", "陳堯睿", "陳嘉宏", "黃兆民", "林暉育", "畢祐瑄"];
+const DEFAULT_LOCATIONS = ["口醫部會議室", "線上會議"];
 const DEFAULT_PARTICIPANTS = ["FR何宜蓁", "PGY謝皓胤", "PGY鄧惠璇", "PGY彭品蓁", "PGY張言駿", "PGY陳冠妤", "PGY馮筠婷", "PGY黃庭暐", "PGY何浩辰", "Int 王日羲", "Int 徐一華"];
 
 // Enhanced Undo/Redo Hook with LocalStorage sync
@@ -114,7 +114,7 @@ export default function App() {
     }
 
     const sortedMeetings = [...meetings].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const headers = ['日期', '時間', '科別', '子項目', '主題', '地點', '指導醫師', '報告者', '紀錄者', '備註'];
+    const headers = ['日期', '時間', '科別', '會議主題', '演講題目', '地點', '指導醫師', '報告者', '紀錄者', '備註'];
     const rows = sortedMeetings.map(m => [
       format(m.date, 'yyyy-MM-dd'),
       `${m.startTime} - ${m.endTime}`,

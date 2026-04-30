@@ -43,8 +43,8 @@ export default function MeetingForm({
   const [nthWeek, setNthWeek] = useState<number>(1); // 1st, 2nd, etc.
   
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
+  const [startTime, setStartTime] = useState('12:30');
+  const [endTime, setEndTime] = useState('13:30');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // New Fields
@@ -390,36 +390,29 @@ export default function MeetingForm({
         {/* Content Selection */}
         {department !== Department.OTHER && DEPARTMENT_CONTENTS[department] && (
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-600">子項目</label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <label className="text-sm font-bold text-slate-600">會議主題</label>
+            <select
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all appearance-none font-bold text-slate-700"
+            >
               {DEPARTMENT_CONTENTS[department].map(c => (
-                <div
-                  key={c}
-                  onClick={() => setContent(c)}
-                  className={cn(
-                    "p-2.5 text-xs border rounded-xl cursor-pointer transition-all text-center flex items-center justify-center min-h-[48px]",
-                    content === c 
-                      ? "bg-amber-50 border-medical-border text-medical-primary font-black shadow-inner" 
-                      : "border-slate-50 hover:bg-slate-50 text-slate-500"
-                  )}
-                >
-                  {c}
-                </div>
+                <option key={c} value={c}>{c}</option>
               ))}
-            </div>
+            </select>
           </div>
         )}
 
         {/* Custom Content Input */}
         {(content === '其他' || department === Department.OTHER) && (
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-600 font-bold text-amber-600">自行輸入內容</label>
+            <label className="text-sm font-bold text-amber-600">自行輸入會議主題</label>
             <input
               type="text"
               value={customContent}
               onChange={(e) => setCustomContent(e.target.value)}
               placeholder="請輸入會議內容..."
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
             />
           </div>
         )}
@@ -427,14 +420,14 @@ export default function MeetingForm({
         {/* Topic Input */}
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-600 flex items-center gap-2">
-            <Type size={16} /> 課程主題 (選填)
+            <Type size={16} /> 演講題目 (選填)
           </label>
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="請輸入課程主題..."
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all"
+            placeholder="請輸入詳細講題..."
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
           />
         </div>
 
