@@ -65,7 +65,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
   };
 
   return (
-    <div className="dashboard-card overflow-hidden flex flex-col h-full bg-medical-surface border border-medical-border min-h-[500px]">
+    <div className="dashboard-card overflow-hidden flex flex-col bg-medical-surface border border-medical-border">
       <div className="accent-line !bg-amber-200"></div>
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -114,7 +114,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-7 border-t border-l border-slate-100 rounded-xl overflow-hidden shadow-sm">
+      <div className="grid grid-cols-7 border-t border-l border-slate-100 rounded-xl overflow-hidden shadow-sm">
         {['週日', '週一', '週二', '週三', '週四', '週五', '週六'].map((day) => (
           <div
             key={day}
@@ -136,7 +136,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(day)}
               className={cn(
-                "min-h-[120px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group cursor-pointer",
+                "min-h-[150px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group cursor-pointer",
                 !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-medical-surface hover:bg-amber-50/50",
                 draggedMeetingId && isCurrentMonth && "bg-amber-50/50",
                 idx % 7 === 6 && "border-r-0"
@@ -154,10 +154,12 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
                 </span>
               </div>
               
-              <div className="space-y-1 mt-1 overflow-y-auto max-h-[140px] scrollbar-hide">
+              <div className="space-y-1 mt-1 scrollbar-hide">
                 {dayMeetings.map((meeting) => {
-                  const isHighlight = meeting.content === '口醫部科會' || meeting.content === '教學行政會議';
-                  const isGrandRound = meeting.department === Department.GRAND_ROUND;
+                  const isRed = meeting.department === Department.ADMIN && 
+                    ['口醫部科會', '教學行政會議', '親善之家會議'].includes(meeting.content);
+                  const isGreen = meeting.department === Department.CROSS_DEPT && 
+                    meeting.content === '跨科臨床病例討論會';
                   
                   return (
                     <div
@@ -170,32 +172,32 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
                       }}
                       className={cn(
                         "cursor-move p-2 rounded-lg text-xs leading-snug font-bold transition-all border",
-                        isHighlight 
-                          ? "bg-rose-50 border-rose-200 text-rose-600 shadow-sm" 
-                          : "bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary border-medical-primary/10",
+                        isRed && "bg-rose-50 border-rose-200 text-rose-600 shadow-sm",
+                        isGreen && "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm",
+                        !isRed && !isGreen && "bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary border-medical-primary/10",
                         draggedMeetingId === meeting.id && "opacity-50"
                       )}
                     >
                       <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between items-center border-b border-current border-opacity-10 pb-0.5 mb-0.5">
+                        <div className="flex justify-between items-center border-b border-current border-opacity-10 pb-0.5 mb-1">
                            <span>[{meeting.department}]</span>
                            <span>{meeting.startTime}</span>
                         </div>
-                        <div className="truncate font-black">{meeting.content}</div>
-                        {isGrandRound && meeting.topic && (
-                          <div className="truncate italic text-[7px] text-slate-400"># {meeting.topic}</div>
+                        <div className="font-black mb-1 break-words leading-tight">{meeting.content}</div>
+                        {meeting.topic && (
+                          <div className="italic text-[10px] text-slate-500 break-words leading-tight mb-1"># {meeting.topic}</div>
                         )}
                         {meeting.location && (
-                          <div className="truncate text-slate-500">📍 {meeting.location}</div>
+                          <div className="text-slate-500 break-words leading-tight">📍 {meeting.location}</div>
                         )}
                         {meeting.advisors && meeting.advisors.length > 0 && (
-                          <div className="truncate text-slate-500">👨‍🏫 {meeting.advisors.join(', ')}</div>
+                          <div className="text-slate-500 break-words leading-tight">👨‍🏫 {meeting.advisors.join(', ')}</div>
                         )}
                         {meeting.presenter && (
-                          <div className="truncate text-slate-500">🎤 {meeting.presenter}</div>
+                          <div className="text-slate-500 break-words leading-tight">🎤 {meeting.presenter}</div>
                         )}
                         {meeting.recorder && (
-                          <div className="truncate text-slate-500">✍️ {meeting.recorder}</div>
+                          <div className="text-slate-500 break-words leading-tight">✍️ {meeting.recorder}</div>
                         )}
                       </div>
                     </div>
