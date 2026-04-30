@@ -10,7 +10,8 @@ import {
   Plus,
   Users,
   MapPin,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import Calendar from './Calendar';
 import MeetingForm from './MeetingForm';
@@ -18,6 +19,8 @@ import RecentMeetingsList from './RecentMeetingsList';
 import { Meeting, AppSettings } from './types';
 import { cn } from './lib/utils';
 import { format } from 'date-fns';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { 
   subscribeMeetings, 
   saveMeetings, 
@@ -141,6 +144,73 @@ export default function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportPDF = async () => {
+    const calendarElement = document.getElementById('calendar-container');
+    if (!calendarElement) return;
+
+    try {
+      // Add exporting class to trigger CSS changes (like hiding other month events)
+      calendarElement.classList.add('is-exporting');
+
+      const originalStyle = calendarElement.getAttribute('style') || '';
+      
+      // Expand for full capture
+      calendarElement.style.width = '1600px'; 
+      calendarElement.style.height = 'auto'; 
+      calendarElement.style.overflow = 'visible';
+      calendarElement.style.padding = '40px';
+      calendarElement.style.borderRadius = '0';
+      calendarElement.style.boxShadow = 'none';
+
+      const imgData = await toPng(calendarElement, {
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        pixelRatio: 1.5, // Balanced quality
+        filter: (node) => {
+          const exclusionIds = ['calendar-controls'];
+          if (node instanceof HTMLElement && exclusionIds.includes(node.id)) {
+            return false;
+          }
+          return true;
+        }
+      });
+      
+      // Restore styles and remove exporting class
+      calendarElement.setAttribute('style', originalStyle);
+      calendarElement.classList.remove('is-exporting');
+
+      const img = new Image();
+      img.src = imgData;
+      img.onload = () => {
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: 'a4'
+        });
+        
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+        const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+        
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
+        
+        // Center image on page
+        const x = (pageWidth - finalWidth) / 2;
+        const y = (pageHeight - finalHeight) / 2;
+        
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`口腔醫學部教學活動表_${format(new Date(), 'yyyyMM')}.pdf`);
+      };
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('匯出 PDF 失敗，請試著縮小瀏覽器視窗後再試一次');
+    }
   };
 
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
@@ -315,7 +385,7 @@ export default function App() {
           </button>
 
           <button 
-            onClick={() => setActiveView('settings')}
+            onClick={() => checkAuth(() => setActiveView('settings'))}
             className={cn("side-rail-btn", activeView === 'settings' && "active")}
           >
             <Settings size={18} /> 系統偏好設定
@@ -331,6 +401,12 @@ export default function App() {
               className="w-full py-2.5 bg-white hover:bg-slate-50 text-amber-700 text-xs font-bold rounded-xl border border-amber-200 transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               <Download size={14} /> 匯出會議記錄 (CSV)
+            </button>
+            <button 
+              onClick={handleExportPDF}
+              className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-amber-100"
+            >
+              <FileText size={14} /> 匯出行事曆 (PDF)
             </button>
           </div>
         </div>

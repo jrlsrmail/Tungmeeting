@@ -34,6 +34,19 @@ body {
   }
 }
 
+.is-exporting .other-month-event {
+  display: none !important;
+}
+
+.is-exporting .other-month-day span {
+  opacity: 0 !important;
+}
+
+.is-exporting .other-month-day {
+  background-color: #f8fafc !important;
+  border-color: #f1f5f9 !important;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

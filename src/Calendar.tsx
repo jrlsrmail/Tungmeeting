@@ -65,34 +65,36 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
   };
 
   return (
-    <div className="dashboard-card overflow-hidden flex flex-col bg-medical-surface border border-medical-border">
+    <div id="calendar-container" className="dashboard-card overflow-hidden flex flex-col bg-medical-surface border border-medical-border">
       <div className="accent-line !bg-amber-200"></div>
       
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <select 
-              value={currentMonth.getFullYear()} 
-              onChange={handleYearChange}
-              className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
-            >
-              {[2026, 2027, 2028, 2029, 2030].map(year => (
-                <option key={year} value={year}>{year}年</option>
-              ))}
-            </select>
-            <select 
-              value={currentMonth.getMonth()} 
-              onChange={handleMonthChange}
-              className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <option key={i} value={i}>{i + 1}月</option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-slate-400 font-bold tracking-wider">MEETING SCHEDULE</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative">
+        <div className="flex items-center gap-2">
+          <select 
+            value={currentMonth.getFullYear()} 
+            onChange={handleYearChange}
+            className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
+          >
+            {[2026, 2027, 2028, 2029, 2030].map(year => (
+              <option key={year} value={year}>{year}年</option>
+            ))}
+          </select>
+          <select 
+            value={currentMonth.getMonth()} 
+            onChange={handleMonthChange}
+            className="text-2xl font-black text-slate-800 bg-transparent border-none outline-none cursor-pointer hover:text-medical-primary transition-colors focus:ring-0"
+          >
+            {Array.from({ length: 12 }).map((_, i) => (
+              <option key={i} value={i}>{i + 1}月</option>
+            ))}
+          </select>
         </div>
-        <div className="flex gap-2">
+
+        <div className="md:absolute md:left-1/2 md:-translate-x-1/2 text-center">
+          <p className="text-2xl font-black text-black tracking-tight">口腔醫學部 教學活動表</p>
+        </div>
+
+        <div id="calendar-controls" className="flex gap-2">
           <button
             onClick={prevMonth}
             className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400 transition-colors border border-slate-100"
@@ -118,7 +120,7 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
         {['週日', '週一', '週二', '週三', '週四', '週五', '週六'].map((day) => (
           <div
             key={day}
-            className="py-4 text-center text-sm font-black text-slate-500 bg-slate-50/50 border-r border-slate-100 border-b border-slate-100 uppercase tracking-widest"
+            className="py-4 text-center text-sm font-black text-slate-900 bg-slate-200 border-r border-slate-300 border-b border-slate-300 uppercase tracking-widest"
           >
             {day}
           </div>
@@ -136,8 +138,8 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(day)}
               className={cn(
-                "min-h-[150px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group cursor-pointer",
-                !isCurrentMonth ? "bg-slate-50/20 text-slate-200" : "bg-medical-surface hover:bg-amber-50/50",
+                "min-h-[120px] border-r border-b border-slate-100 p-1.5 flex flex-col transition-all group cursor-pointer",
+                !isCurrentMonth ? "bg-slate-50/10 text-slate-200 other-month-day" : "bg-medical-surface hover:bg-amber-50/50",
                 draggedMeetingId && isCurrentMonth && "bg-amber-50/50",
                 idx % 7 === 6 && "border-r-0"
               )}
@@ -171,34 +173,37 @@ export default function Calendar({ meetings, onEditMeeting, onDeleteMeeting, onM
                         onEditMeeting(meeting);
                       }}
                       className={cn(
-                        "cursor-move p-2 rounded-lg text-xs leading-snug font-bold transition-all border",
-                        isRed && "bg-rose-50 border-rose-200 text-rose-600 shadow-sm",
-                        isGreen && "bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm",
-                        !isRed && !isGreen && "bg-medical-primary/5 hover:bg-medical-primary/10 text-medical-primary border-medical-primary/10",
-                        draggedMeetingId === meeting.id && "opacity-50"
+                        "cursor-move p-2 rounded-lg text-[10px] leading-snug font-bold transition-all border-2",
+                        isRed && "bg-rose-100 border-rose-400 text-rose-800 shadow-sm",
+                        isGreen && "bg-emerald-100 border-emerald-400 text-emerald-800 shadow-sm",
+                        !isRed && !isGreen && "bg-amber-100 border-amber-300 text-slate-900 shadow-sm",
+                        draggedMeetingId === meeting.id && "opacity-50",
+                        !isCurrentMonth && "other-month-event"
                       )}
                     >
                       <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between items-center border-b border-current border-opacity-10 pb-0.5 mb-1">
+                        <div className="flex justify-between items-center border-b border-current border-opacity-30 pb-0.5 mb-1 font-black text-[10px]">
                            <span>[{meeting.department}]</span>
                            <span>{meeting.startTime}</span>
                         </div>
-                        <div className="font-black mb-1 break-words leading-tight">{meeting.content}</div>
+                        <div className="font-black mb-1 break-words leading-tight text-xs">{meeting.content}</div>
                         {meeting.topic && (
-                          <div className="italic text-[10px] text-slate-500 break-words leading-tight mb-1"># {meeting.topic}</div>
+                          <div className="italic text-[9px] text-slate-800 break-words leading-tight mb-1 font-extrabold border-l-2 border-current pl-1"># {meeting.topic}</div>
                         )}
-                        {meeting.location && (
-                          <div className="text-slate-500 break-words leading-tight">📍 {meeting.location}</div>
-                        )}
-                        {meeting.advisors && meeting.advisors.length > 0 && (
-                          <div className="text-slate-500 break-words leading-tight">👨‍🏫 {meeting.advisors.join(', ')}</div>
-                        )}
-                        {meeting.presenter && (
-                          <div className="text-slate-500 break-words leading-tight">🎤 {meeting.presenter}</div>
-                        )}
-                        {meeting.recorder && (
-                          <div className="text-slate-500 break-words leading-tight">✍️ {meeting.recorder}</div>
-                        )}
+                        <div className="space-y-0.5 text-[9px]">
+                          {meeting.location && (
+                            <div className="text-slate-900 break-words leading-tight font-bold">📍 {meeting.location}</div>
+                          )}
+                          {meeting.advisors && meeting.advisors.length > 0 && (
+                            <div className="text-slate-900 break-words leading-tight font-bold">👨‍🏫 {meeting.advisors.join(', ')}</div>
+                          )}
+                          {meeting.presenter && (
+                            <div className="text-slate-900 break-words leading-tight font-bold">🎤 {meeting.presenter}</div>
+                          )}
+                          {meeting.recorder && (
+                            <div className="text-slate-900 break-words leading-tight font-bold">✍️ {meeting.recorder}</div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

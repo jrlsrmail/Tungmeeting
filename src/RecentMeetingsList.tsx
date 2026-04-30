@@ -113,41 +113,41 @@ export default function RecentMeetingsList({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 border-t border-slate-100 pt-4 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 border-t border-slate-100 pt-4 text-sm">
                     {meeting.topic && (
                       <div className="flex items-center gap-1.5 text-slate-500">
-                        <Type size={12} className="text-slate-400" />
+                        <Type size={14} className="text-slate-400" />
                         <span className="font-bold text-slate-700 truncate">主題：{meeting.topic}</span>
                       </div>
                     )}
                     {meeting.location && (
                       <div className="flex items-center gap-1.5 text-slate-500">
-                        <MapPin size={12} className="text-slate-400" />
-                        <span className="truncate">地點：{meeting.location}</span>
+                        <MapPin size={14} className="text-slate-400" />
+                        <span className="truncate font-bold text-slate-900">地點：{meeting.location}</span>
                       </div>
                     )}
                     {meeting.advisors && meeting.advisors.length > 0 && (
                       <div className="flex items-center gap-1.5 text-slate-500">
-                        <Users size={12} className="text-slate-400" />
-                        <span className="truncate">指導：{meeting.advisors.join(', ')}</span>
+                        <Users size={14} className="text-slate-400" />
+                        <span className="truncate font-bold text-slate-900">指導：{meeting.advisors.join(', ')}</span>
                       </div>
                     )}
                     {meeting.presenter && (
                       <div className="flex items-center gap-1.5 text-slate-500">
-                        <User size={12} className="text-slate-400" />
-                        <span className="truncate">報告：{meeting.presenter}</span>
+                        <User size={14} className="text-slate-400" />
+                        <span className="truncate font-bold text-slate-900">報告：{meeting.presenter}</span>
                       </div>
                     )}
                     {meeting.recorder && (
                       <div className="flex items-center gap-1.5 text-slate-500">
-                        <User size={12} className="text-slate-400" />
-                        <span className="truncate">紀錄：{meeting.recorder}</span>
+                        <User size={14} className="text-slate-400" />
+                        <span className="truncate font-bold text-slate-900">紀錄：{meeting.recorder}</span>
                       </div>
                     )}
                     {meeting.remarks && (
                       <div className="col-span-full flex items-start gap-1.5 text-slate-500 mt-1 italic">
-                        <Info size={12} className="text-slate-400 mt-0.5 shrink-0" />
-                        <span>備註：{meeting.remarks}</span>
+                        <Info size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                        <span className="font-bold text-slate-700">備註：{meeting.remarks}</span>
                       </div>
                     )}
                   </div>
