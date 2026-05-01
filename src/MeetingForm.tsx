@@ -426,7 +426,7 @@ export default function MeetingForm({
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="請輸入詳細講題..."
+            placeholder="請輸入演講題目"
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-base outline-none focus:border-amber-500 transition-all font-bold text-slate-700"
           />
         </div>
@@ -485,7 +485,7 @@ export default function MeetingForm({
               type="text"
               value={customAdvisor}
               onChange={(e) => setCustomAdvisor(e.target.value)}
-              placeholder="請輸入姓名"
+              placeholder="自行輸入指導醫師"
               className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs outline-none focus:border-amber-500"
             />
           </div>

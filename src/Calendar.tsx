@@ -12,6 +12,7 @@ interface CalendarProps {
   onDeleteMeeting: (id: string) => void;
   onMoveMeeting: (id: string, newDate: Date) => void;
   onDateClick: (date: Date) => void;
+  onDateDoubleClick: (date: Date) => void;
 }
 
 export default function Calendar({ 
@@ -21,7 +22,8 @@ export default function Calendar({
   onEditMeeting, 
   onDeleteMeeting, 
   onMoveMeeting, 
-  onDateClick 
+  onDateClick,
+  onDateDoubleClick
 }: CalendarProps) {
   const [draggedMeetingId, setDraggedMeetingId] = useState<string | null>(null);
 
@@ -144,6 +146,7 @@ export default function Calendar({
             <div
               key={day.toString()}
               onClick={() => onDateClick(day)}
+              onDoubleClick={() => onDateDoubleClick(day)}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(day)}
               className={cn(

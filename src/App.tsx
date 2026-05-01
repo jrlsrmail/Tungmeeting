@@ -269,6 +269,13 @@ export default function App() {
     setPreselectedDate(null);
   };
 
+  const handleDateDoubleClick = (date: Date) => {
+    // Double click to add a meeting on that day
+    setPreselectedDate(format(date, 'yyyy-MM-dd'));
+    setEditingMeeting(null);
+    setShowForm(true);
+  };
+
   useEffect(() => {
     const unsubscribe = subscribeMeetings((newMeetings) => {
       setMeetings(newMeetings);
@@ -432,9 +439,9 @@ export default function App() {
         </header>
 
         {/* Scrollable Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scrollbar-hide">
-          <div className="max-w-[1400px] mx-auto">
-            <div className="flex gap-8 items-start">
+        <main className="flex-1 overflow-hidden p-4 md:p-8">
+          <div className="max-w-[1400px] mx-auto h-full">
+            <div className="flex gap-8 items-start h-full">
               {/* Form Section - Toggleable Desktop */}
               <AnimatePresence>
                 {showForm && (
@@ -442,7 +449,7 @@ export default function App() {
                     initial={{ opacity: 0, width: 0, x: -20 }}
                     animate={{ opacity: 1, width: 420, x: 0 }}
                     exit={{ opacity: 0, width: 0, x: -20 }}
-                    className="shrink-0 sticky top-0 overflow-hidden"
+                    className="shrink-0 h-full overflow-y-auto scrollbar-hide pb-10"
                   >
                     <MeetingForm 
                       onAddMeetings={handleAddMeetings}
@@ -463,7 +470,7 @@ export default function App() {
               </AnimatePresence>
 
               {/* View Section */}
-              <div className="flex-1 min-w-0 space-y-8">
+              <div className="flex-1 min-w-0 h-full overflow-y-auto scrollbar-hide space-y-8 pr-2 pb-10">
                 {activeView === 'calendar' ? (
                   <div className="flex flex-col gap-8">
                     {/* Render components based on priorityView */}
@@ -482,6 +489,7 @@ export default function App() {
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}
                             onDateClick={handleDateClick}
+                            onDateDoubleClick={handleDateDoubleClick}
                           />
                         </motion.div>
 
@@ -528,6 +536,7 @@ export default function App() {
                             onDeleteMeeting={handleDeleteMeeting}
                             onMoveMeeting={handleMoveMeeting}
                             onDateClick={handleDateClick}
+                            onDateDoubleClick={handleDateDoubleClick}
                           />
                         </motion.div>
                       </>
